@@ -1,0 +1,294 @@
+.metrics-page {
+  padding: 32px 40px;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+/* Stats Cards */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  background: #ffffff;
+  border: 1px solid #e5e8eb;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.2s ease;
+  animation: fadeIn 0.4s ease forwards;
+}
+
+.stat-card:nth-child(1) { animation-delay: 0.05s; }
+.stat-card:nth-child(2) { animation-delay: 0.1s; }
+.stat-card:nth-child(3) { animation-delay: 0.15s; }
+.stat-card:nth-child(4) { animation-delay: 0.2s; }
+
+.stat-card:hover {
+  border-color: #020760;
+  box-shadow: 0 4px 12px rgba(2, 7, 96, 0.15);
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #8b95a1;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: #191f28;
+  margin-bottom: 4px;
+}
+
+.stat-change {
+  font-size: 12px;
+  color: #020760;
+  font-weight: 600;
+}
+
+/* Table Container */
+.table-container {
+  background: #ffffff;
+  border: 1px solid #e5e8eb;
+  border-radius: 12px;
+  overflow: hidden;
+  animation: fadeIn 0.5s ease 0.3s forwards;
+  opacity: 0;
+}
+
+.table-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e8eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.table-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #191f28;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  background: #f2f4f6;
+  border-radius: 8px;
+  padding: 8px 12px;
+  width: 280px;
+}
+
+.search-box input {
+  background: none;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  color: #191f28;
+  width: 100%;
+  margin-left: 8px;
+  font-family: 'Pretendard', -apple-system, sans-serif;
+}
+
+.search-box input::placeholder {
+  color: #8b95a1;
+}
+
+/* Table */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  background: #f8f9fa;
+}
+
+th {
+  padding: 14px 24px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4e5968;
+  border-bottom: 1px solid #e5e8eb;
+}
+
+td {
+  padding: 16px 24px;
+  font-size: 14px;
+  color: #191f28;
+  border-bottom: 1px solid #f2f4f6;
+}
+
+tbody tr {
+  transition: background 0.15s ease;
+  cursor: pointer;
+}
+
+tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.metric-number {
+  color: #8b95a1;
+  font-weight: 500;
+}
+
+.metric-name {
+  font-weight: 600;
+  color: #191f28;
+}
+
+.metric-description {
+  color: #4e5968;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-category {
+  background: #e8eaff;
+  color: #020760;
+}
+
+.status-active {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #00b368;
+  font-weight: 600;
+}
+
+.status-inactive {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #8b95a1;
+  font-weight: 500;
+}
+
+.status-warning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.version {
+  font-family: 'Courier New', monospace;
+  color: #8b95a1;
+  font-size: 13px;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 24px;
+  border-top: 1px solid #e5e8eb;
+}
+
+.pagination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #e5e8eb;
+  background: #ffffff;
+  color: #4e5968;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  border-color: #020760;
+  color: #020760;
+  background: #e8eaff;
+}
+
+.pagination-btn.active {
+  background: #020760;
+  color: #ffffff;
+  border-color: #020760;
+  font-weight: 600;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-btn:disabled:hover {
+  border-color: #e5e8eb;
+  color: #4e5968;
+  background: #ffffff;
+}
+
+.pagination-ellipsis {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: #8b95a1;
+  font-size: 14px;
+}
+
+/* Loading & Error States */
+.loading, .error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  font-size: 16px;
+  color: #4e5968;
+}
+
+.error {
+  color: #ef4444;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
