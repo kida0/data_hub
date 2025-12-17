@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from typing import Optional
 from ..models.metric import Metric
+from ..models.metric_data_point import MetricDataPoint
 from ..schemas.metric import MetricCreate, MetricUpdate
 
 
@@ -84,11 +85,33 @@ class MetricService:
         active_metrics = db.query(Metric).filter(Metric.status == "활성화").count()
         inactive_metrics = db.query(Metric).filter(Metric.status == "비활성화").count()
         warning_metrics = db.query(Metric).filter(Metric.status == "주의").count()
-        
+
         return {
             "total": total_metrics,
             "active": active_metrics,
             "inactive": inactive_metrics,
             "warning": warning_metrics
         }
+
+    @staticmethod
+    def get_metric_time_series(db: Session, metric_id: int, limit: int = 30):
+        """지표의 시계열 데이터 조회"""
+        data_points = (
+            db.query(MetricDataPoint)
+            .filter(MetricDataPoint.metric_id == metric_id)
+            .order_by(MetricDataPoint.timestamp.desc())
+            .limit(limit)
+            .all()
+        )
+
+        # 시간순으로 정렬 (오래된 것부터)
+        data_points.reverse()
+
+        return [
+            {
+                "timestamp": point.timestamp.isoformat(),
+                "value": point.value
+            }
+            for point in data_points
+        ]
 

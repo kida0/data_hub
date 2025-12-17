@@ -20,6 +20,7 @@ export const metricsAPI = {
   getAll: (params) => api.get('/api/metrics', { params }),
   getStats: () => api.get('/api/metrics/stats'),
   getById: (id) => api.get(`/api/metrics/${id}`),
+  getTimeSeries: (id, params) => api.get(`/api/metrics/${id}/timeseries`, { params }),
   create: (data) => api.post('/api/metrics', data),
   update: (id, data) => api.put(`/api/metrics/${id}`, data),
   delete: (id) => api.delete(`/api/metrics/${id}`),
@@ -27,8 +28,12 @@ export const metricsAPI = {
 
 // Segments API
 export const segmentsAPI = {
-  getAll: () => api.get('/api/segments'),
+  getAll: (params) => api.get('/api/segments', { params }),
+  getStats: () => api.get('/api/segments/stats'),
   getById: (id) => api.get(`/api/segments/${id}`),
+  create: (data) => api.post('/api/segments', data),
+  update: (id, data) => api.put(`/api/segments/${id}`, data),
+  delete: (id) => api.delete(`/api/segments/${id}`),
 }
 
 export default api

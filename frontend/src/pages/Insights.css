@@ -23,12 +23,12 @@
 }
 
 .btn-primary {
-  background: #383A59;
+  background: #020760;
   color: #ffffff;
 }
 
 .btn-primary:hover {
-  background: #2c2e45;
+  background: #010550;
 }
 
 /* Filter Tabs */
@@ -55,14 +55,14 @@
 }
 
 .filter-tab:hover {
-  border-color: #383A59;
-  color: #383A59;
+  border-color: #020760;
+  color: #020760;
 }
 
 .filter-tab.active {
-  background: #383A59;
+  background: #020760;
   color: #ffffff;
-  border-color: #383A59;
+  border-color: #020760;
 }
 
 .filter-count {
@@ -165,7 +165,7 @@
 }
 
 .insights-table thead th.sortable:hover {
-  color: #383A59;
+  color: #020760;
 }
 
 .insights-table thead th.align-right {
@@ -202,6 +202,15 @@
 
 .table-row.best-performer:hover {
   background: #dcfce7;
+}
+
+.clickable-initiative {
+  cursor: pointer;
+}
+
+.non-clickable-initiative {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* Initiative Cell */
@@ -253,6 +262,14 @@
   color: #6a1b9a;
 }
 
+/* Metric Cell */
+.metric-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
 /* Metric Values in Table */
 .metric-value {
   font-size: 15px;
@@ -263,7 +280,7 @@
 .metric-change {
   font-size: 11px;
   font-weight: 600;
-  margin-top: 2px;
+  white-space: nowrap;
 }
 
 .metric-change.positive {
@@ -341,8 +358,8 @@
 }
 
 .expand-btn:hover {
-  border-color: #383A59;
-  color: #383A59;
+  border-color: #020760;
+  color: #020760;
   background: #f3f3f8;
 }
 
@@ -365,8 +382,8 @@
 }
 
 .load-more-btn:hover {
-  border-color: #383A59;
-  color: #383A59;
+  border-color: #020760;
+  color: #020760;
   background: #f3f3f8;
 }
 

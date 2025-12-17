@@ -20,8 +20,14 @@ CREATE TABLE IF NOT EXISTS metrics (
     value FLOAT,
     unit VARCHAR(50),
     category VARCHAR(100),
-    status VARCHAR(50),
+    status VARCHAR(50) DEFAULT '비활성화',
     version VARCHAR(20),
+    metric_owner VARCHAR(100),
+    priority VARCHAR(10),
+    calculation_logic TEXT,
+    alert_settings TEXT,
+    data_source TEXT,
+    aggregation_period VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -45,46 +51,56 @@ CREATE TABLE IF NOT EXISTS segments (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Metric Data Points 테이블 (시계열 데이터 저장)
+CREATE TABLE IF NOT EXISTS metric_data_points (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    metric_id INTEGER NOT NULL,
+    value FLOAT NOT NULL,
+    timestamp TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (metric_id) REFERENCES metrics(id) ON DELETE CASCADE
+);
+
 -- 샘플 데이터 삽입
 INSERT INTO insights (title, description, objective, status, impact_score) VALUES
     ('첫 구매 전환율 향상', '신규 가입 후 7일 이내 첫 구매 전환율이 15% 증가', '첫 구매 전환', '활성', 8.5),
     ('재구매율 증가', '기존 고객의 재구매율이 20% 향상', '재구매 촉진', '활성', 7.8),
     ('이탈률 감소', '90일 이상 비활성 고객이 30% 감소', '이탈 방지', '검토 중', 6.5);
 
-INSERT INTO metrics (name, description, value, unit, category, status, version) VALUES
-    ('MAU', '월간 활성 사용자 수 (Monthly Active Users)', 15420, '명', 'Engagement', '활성화', 'v2.1.3'),
-    ('DAU', '일일 활성 사용자 수 (Daily Active Users)', 5230, '명', 'Engagement', '활성화', 'v2.1.3'),
-    ('WAU', '주간 활성 사용자 수 (Weekly Active Users)', 9850, '명', 'Engagement', '활성화', 'v2.1.2'),
-    ('신규 가입자 수', '일일 신규 가입자 수', 342, '명', 'Engagement', '활성화', 'v2.1.3'),
-    ('결제 전환율', '방문자 중 결제 완료한 비율 (Payment CVR)', 3.8, '%', 'Conversion', '활성화', 'v2.1.3'),
-    ('장바구니 전환율', '방문자 중 장바구니 추가한 비율', 12.5, '%', 'Conversion', '활성화', 'v2.1.1'),
-    ('가입 전환율', '방문자 중 회원가입한 비율', 8.2, '%', 'Conversion', '활성화', 'v2.1.3'),
-    ('평균 주문 금액', '주문당 평균 결제 금액 (AOV)', 58500, '원', 'Revenue', '활성화', 'v2.1.3'),
-    ('고객 생애 가치', '고객당 평균 생애 가치 (LTV)', 245000, '원', 'Revenue', '활성화', 'v2.1.0'),
-    ('월간 매출', '월간 총 매출액 (MRR)', 450000000, '원', 'Revenue', '활성화', 'v2.1.3'),
-    ('일일 매출', '일일 총 매출액', 15000000, '원', 'Revenue', '활성화', 'v2.1.3'),
-    ('재구매율', '이전 구매 고객 중 재구매한 비율', 28.5, '%', 'Retention', '활성화', 'v2.1.2'),
-    ('이탈률', '월간 고객 이탈률 (Churn Rate)', 5.2, '%', 'Retention', '주의', 'v2.1.3'),
-    ('고객 유지율', '고객 유지율 (Retention Rate)', 78.3, '%', 'Retention', '활성화', 'v2.1.3'),
-    ('평균 재구매 주기', '재구매까지 평균 소요 일수', 42, '일', 'Retention', '활성화', 'v2.0.8'),
-    ('장바구니 이탈률', '장바구니 추가 후 미결제 비율', 68.5, '%', 'Conversion', '주의', 'v2.1.1'),
-    ('페이지 방문수', '일일 평균 페이지 뷰', 125000, '회', 'Traffic', '활성화', 'v2.1.3'),
-    ('세션 시간', '방문당 평균 체류 시간', 8.5, '분', 'Traffic', '활성화', 'v2.1.3'),
-    ('이탈률', '첫 페이지에서 이탈한 비율 (Bounce Rate)', 42.3, '%', 'Traffic', '비활성화', 'v2.0.5'),
-    ('세션당 페이지뷰', '세션당 평균 페이지 조회수', 4.2, '회', 'Traffic', '활성화', 'v2.1.3'),
-    ('모바일 전환율', '모바일 방문자 결제 전환율', 2.8, '%', 'Conversion', '활성화', 'v2.1.3'),
-    ('데스크탑 전환율', '데스크탑 방문자 결제 전환율', 4.9, '%', 'Conversion', '활성화', 'v2.1.3'),
-    ('고객 획득 비용', '신규 고객 1명당 획득 비용 (CAC)', 15000, '원', 'Marketing', '활성화', 'v2.1.2'),
-    ('ROI', '마케팅 투자 대비 수익률', 3.5, '배', 'Marketing', '활성화', 'v2.1.3'),
-    ('이메일 오픈율', '발송 이메일 중 오픈율', 24.5, '%', 'Marketing', '활성화', 'v2.1.1'),
-    ('이메일 클릭률', '오픈한 이메일 중 클릭율 (CTR)', 12.8, '%', 'Marketing', '활성화', 'v2.1.1'),
-    ('푸시 알림 오픈율', '푸시 알림 발송 중 오픈율', 8.3, '%', 'Marketing', '비활성화', 'v2.0.7'),
-    ('평균 배송 시간', '주문 후 배송 완료까지 평균 시간', 2.3, '일', 'Operations', '활성화', 'v2.1.3'),
-    ('주문 취소율', '전체 주문 중 취소된 비율', 3.2, '%', 'Operations', '활성화', 'v2.1.2'),
-    ('반품률', '배송 완료 후 반품 비율', 4.1, '%', 'Operations', '활성화', 'v2.1.2');
+INSERT INTO metrics (name, description, value, unit, category, status, version, metric_owner, priority, calculation_logic, data_source, aggregation_period) VALUES
+    ('결제 전환율', '방문자 중 결제 완료한 비율 (Payment CVR)', 3.8, '%', 'Conversion', '활성화', 'v2.1.3', '키다', 'P0', '결제 성공 건수 / 결제 화면 진입 건수 * 100', 'payment_events, user_journey_logs', '일별'),
+    ('MAU', '월간 활성 사용자 수 (Monthly Active Users)', 15420, '명', 'Engagement', '활성화', 'v2.1.3', '키다', 'P1', 'COUNT(DISTINCT user_id) WHERE last_active >= DATE_SUB(NOW(), INTERVAL 30 DAY)', 'user_activity_logs', '월별'),
+    ('DAU', '일일 활성 사용자 수 (Daily Active Users)', 5230, '명', 'Engagement', '활성화', 'v2.1.3', '키다', 'P1', 'COUNT(DISTINCT user_id) WHERE DATE(last_active) = CURRENT_DATE', 'user_activity_logs', '일별'),
+    ('WAU', '주간 활성 사용자 수 (Weekly Active Users)', 9850, '명', 'Engagement', '활성화', 'v2.1.2', '키다', 'P2', 'COUNT(DISTINCT user_id) WHERE last_active >= DATE_SUB(NOW(), INTERVAL 7 DAY)', 'user_activity_logs', '주별'),
+    ('신규 가입자 수', '일일 신규 가입자 수', 342, '명', 'Engagement', '활성화', 'v2.1.3', '키다', 'P2', 'COUNT(user_id) WHERE DATE(created_at) = CURRENT_DATE', 'users', '일별'),
+    ('장바구니 전환율', '방문자 중 장바구니 추가한 비율', 12.5, '%', 'Conversion', '활성화', 'v2.1.1', '키다', 'P1', 'COUNT(cart_add_events) / COUNT(session_id) * 100', 'cart_events, sessions', '일별'),
+    ('가입 전환율', '방문자 중 회원가입한 비율', 8.2, '%', 'Conversion', '활성화', 'v2.1.3', '키다', 'P2', 'COUNT(signup_events) / COUNT(visitor_id) * 100', 'signup_events, visitors', '일별'),
+    ('평균 주문 금액', '주문당 평균 결제 금액 (AOV)', 58500, '원', 'Revenue', '활성화', 'v2.1.3', '키다', 'P0', 'SUM(order_amount) / COUNT(order_id)', 'orders', '일별'),
+    ('고객 생애 가치', '고객당 평균 생애 가치 (LTV)', 245000, '원', 'Revenue', '활성화', 'v2.1.0', '키다', 'P1', 'SUM(total_revenue) / COUNT(DISTINCT customer_id)', 'orders, customers', '월별'),
+    ('월간 매출', '월간 총 매출액 (MRR)', 450000000, '원', 'Revenue', '활성화', 'v2.1.3', '키다', 'P0', 'SUM(order_amount) WHERE MONTH(order_date) = MONTH(NOW())', 'orders', '월별'),
+    ('일일 매출', '일일 총 매출액', 15000000, '원', 'Revenue', '활성화', 'v2.1.3', '키다', 'P1', 'SUM(order_amount) WHERE DATE(order_date) = CURRENT_DATE', 'orders', '일별'),
+    ('재구매율', '이전 구매 고객 중 재구매한 비율', 28.5, '%', 'Retention', '활성화', 'v2.1.2', '키다', 'P1', 'COUNT(DISTINCT customer_id WHERE order_count > 1) / COUNT(DISTINCT customer_id) * 100', 'orders', '월별'),
+    ('이탈률', '월간 고객 이탈률 (Churn Rate)', 5.2, '%', 'Retention', '주의', 'v2.1.3', '키다', 'P0', 'COUNT(churned_customers) / COUNT(total_customers) * 100', 'customers', '월별'),
+    ('고객 유지율', '고객 유지율 (Retention Rate)', 78.3, '%', 'Retention', '활성화', 'v2.1.3', '키다', 'P1', '(1 - churn_rate) * 100', 'customers', '월별'),
+    ('평균 재구매 주기', '재구매까지 평균 소요 일수', 42, '일', 'Retention', '활성화', 'v2.0.8', '키다', 'P2', 'AVG(DATEDIFF(next_order_date, previous_order_date))', 'orders', '월별'),
+    ('장바구니 이탈률', '장바구니 추가 후 미결제 비율', 68.5, '%', 'Conversion', '주의', 'v2.1.1', '키다', 'P2', '(COUNT(cart_add) - COUNT(checkout_complete)) / COUNT(cart_add) * 100', 'cart_events, checkout_events', '일별'),
+    ('페이지 방문수', '일일 평균 페이지 뷰', 125000, '회', 'Traffic', '활성화', 'v2.1.3', '키다', 'P3', 'COUNT(page_view_events) WHERE DATE(event_time) = CURRENT_DATE', 'page_view_events', '일별'),
+    ('세션 시간', '방문당 평균 체류 시간', 8.5, '분', 'Traffic', '활성화', 'v2.1.3', '키다', 'P3', 'AVG(session_duration) / 60', 'sessions', '일별'),
+    ('이탈률', '첫 페이지에서 이탈한 비율 (Bounce Rate)', 42.3, '%', 'Traffic', '비활성화', 'v2.0.5', '키다', 'P2', 'COUNT(single_page_sessions) / COUNT(total_sessions) * 100', 'sessions', '일별'),
+    ('세션당 페이지뷰', '세션당 평균 페이지 조회수', 4.2, '회', 'Traffic', '활성화', 'v2.1.3', '키다', 'P3', 'COUNT(page_views) / COUNT(DISTINCT session_id)', 'page_views, sessions', '일별'),
+    ('모바일 전환율', '모바일 방문자 결제 전환율', 2.8, '%', 'Conversion', '활성화', 'v2.1.3', '키다', 'P1', 'COUNT(mobile_purchases) / COUNT(mobile_visitors) * 100', 'orders, visitors', '일별'),
+    ('데스크탑 전환율', '데스크탑 방문자 결제 전환율', 4.9, '%', 'Conversion', '활성화', 'v2.1.3', '키다', 'P1', 'COUNT(desktop_purchases) / COUNT(desktop_visitors) * 100', 'orders, visitors', '일별'),
+    ('고객 획득 비용', '신규 고객 1명당 획득 비용 (CAC)', 15000, '원', 'Marketing', '활성화', 'v2.1.2', '키다', 'P0', 'SUM(marketing_spend) / COUNT(new_customers)', 'marketing_campaigns, customers', '월별'),
+    ('ROI', '마케팅 투자 대비 수익률', 3.5, '배', 'Marketing', '활성화', 'v2.1.3', '키다', 'P0', '(SUM(revenue) - SUM(marketing_spend)) / SUM(marketing_spend)', 'orders, marketing_campaigns', '월별'),
+    ('이메일 오픈율', '발송 이메일 중 오픈율', 24.5, '%', 'Marketing', '활성화', 'v2.1.1', '키다', 'P2', 'COUNT(email_opens) / COUNT(emails_sent) * 100', 'email_events', '일별'),
+    ('이메일 클릭률', '오픈한 이메일 중 클릭율 (CTR)', 12.8, '%', 'Marketing', '활성화', 'v2.1.1', '키다', 'P2', 'COUNT(email_clicks) / COUNT(email_opens) * 100', 'email_events', '일별'),
+    ('푸시 알림 오픈율', '푸시 알림 발송 중 오픈율', 8.3, '%', 'Marketing', '비활성화', 'v2.0.7', '키다', 'P3', 'COUNT(push_opens) / COUNT(push_sent) * 100', 'push_events', '일별'),
+    ('평균 배송 시간', '주문 후 배송 완료까지 평균 시간', 2.3, '일', 'Operations', '활성화', 'v2.1.3', '키다', 'P1', 'AVG(DATEDIFF(delivery_date, order_date))', 'orders, deliveries', '일별'),
+    ('주문 취소율', '전체 주문 중 취소된 비율', 3.2, '%', 'Operations', '활성화', 'v2.1.2', '키다', 'P2', 'COUNT(cancelled_orders) / COUNT(total_orders) * 100', 'orders', '일별'),
+    ('반품률', '배송 완료 후 반품 비율', 4.1, '%', 'Operations', '활성화', 'v2.1.2', '키다', 'P2', 'COUNT(returns) / COUNT(delivered_orders) * 100', 'orders, returns', '일별');
 
 INSERT INTO segments (name, description, customer_count, category, metric1_value, metric1_label, metric2_value, metric2_label, metric3_value, metric3_label, last_touch_channel, last_touch_date) VALUES
-    ('VIP 고객', '최근 6개월 구매액 500만원 이상, 월 3회 이상 방문', 12847, 'VIP 관리', '8.2M', '평균 구매액', '42.3%', '전환율', '87.5%', '재구매율', '이메일', '2024-12-12'),
+    ('최근 30일 활성 유저', '지난 30일 동안 1회 이상 로그인하고 핵심 기능을 사용한 활성 사용자 그룹', 42847, 'User Behavior', '68.3%', '전체 유저 대비', '18.5분', '평균 세션', '73.2%', '30일 유지율', '이메일', '2024-12-12'),
     ('신규 가입자', '최근 30일 내 가입, 첫 구매 미완료', 24521, '신규 획득', '68.4%', '앱 실행률', '34.2%', '장바구니', '12.8%', '첫구매 전환', '푸시', '2024-12-09'),
     ('이탈 위험군', '90일 이상 미방문, 과거 활성 고객', 18392, '재활성화', '3.2M', '평균 LTV', '127일', '미방문 일수', '38.5%', '회복 가능성', NULL, NULL),
     ('충성 고객', '12개월 이상 연속 구매, 월 평균 2회 이상', 45210, '리텐션', '2.4M', '평균 구매액', '82점', 'NPS 점수', '45.2%', '추천율', 'SMS', '2024-12-07'),

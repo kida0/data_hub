@@ -43,6 +43,20 @@ def get_metric(metric_id: int, db: Session = Depends(get_db)):
     return metric
 
 
+@router.get("/{metric_id}/timeseries")
+def get_metric_timeseries(
+    metric_id: int,
+    limit: int = Query(30, ge=1, le=365),
+    db: Session = Depends(get_db)
+):
+    """지표의 시계열 데이터 조회"""
+    metric = MetricService.get_metric_by_id(db, metric_id)
+    if not metric:
+        raise HTTPException(status_code=404, detail="Metric not found")
+
+    return MetricService.get_metric_time_series(db, metric_id, limit)
+
+
 @router.post("/", response_model=MetricResponse)
 def create_metric(metric: MetricCreate, db: Session = Depends(get_db)):
     """새 지표 생성"""

@@ -16,6 +16,11 @@
   left: 0;
   top: 0;
   z-index: 1000;
+  transition: width 0.3s ease;
+}
+
+.sidebar.collapsed {
+  width: 80px;
 }
 
 .logo {
@@ -27,6 +32,11 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  justify-content: center;
+}
+
+.sidebar.collapsed .logo {
+  padding: 0 16px 32px;
 }
 
 .logo h1 {
@@ -66,13 +76,18 @@
   cursor: pointer;
 }
 
+.sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding: 12px 0;
+}
+
 .nav-item:hover {
   background: #f2f4f6;
   color: #191f28;
 }
 
 .nav-item.active {
-  background: #383A59;
+  background: #020760;
   color: #ffffff;
   font-weight: 600;
 }
@@ -82,6 +97,10 @@
   height: 20px;
   margin-right: 12px;
   flex-shrink: 0;
+}
+
+.sidebar.collapsed .nav-icon {
+  margin-right: 0;
 }
 
 .nav-label-text {
@@ -95,5 +114,34 @@
   background-color: #fafafa;
   overflow-y: auto;
   min-height: 100vh;
+  transition: margin-left 0.3s ease;
+}
+
+.main-content.expanded {
+  margin-left: 80px;
+}
+
+.sidebar-toggle {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 40px;
+  border: 1px solid #e5e8eb;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #4e5968;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.sidebar-toggle:hover {
+  background: #f2f4f6;
+  color: #020760;
+  border-color: #020760;
 }
 

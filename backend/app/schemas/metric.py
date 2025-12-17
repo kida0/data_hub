@@ -11,10 +11,24 @@ class MetricBase(BaseModel):
     category: Optional[str] = None
     status: Optional[str] = None
     version: Optional[str] = None
+    metric_owner: Optional[str] = None
+    priority: Optional[str] = None
+    calculation_logic: Optional[str] = None
+    alert_settings: Optional[str] = None
+    data_source: Optional[str] = None
+    aggregation_period: Optional[str] = None
 
 
-class MetricCreate(MetricBase):
-    pass
+class MetricCreate(BaseModel):
+    name: str
+    description: str
+    category: str
+    metric_owner: str
+    priority: str
+    calculation_logic: str
+    alert_settings: Optional[str] = None
+    status: str = "비활성화"
+    version: str = "v1.0.0"
 
 
 class MetricUpdate(BaseModel):
@@ -25,6 +39,12 @@ class MetricUpdate(BaseModel):
     category: Optional[str] = None
     status: Optional[str] = None
     version: Optional[str] = None
+    metric_owner: Optional[str] = None
+    priority: Optional[str] = None
+    calculation_logic: Optional[str] = None
+    alert_settings: Optional[str] = None
+    data_source: Optional[str] = None
+    aggregation_period: Optional[str] = None
 
 
 class MetricResponse(MetricBase):

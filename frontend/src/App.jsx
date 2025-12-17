@@ -1,11 +1,15 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
-import Home from './pages/Home'
 import Insights from './pages/Insights'
+import InsightDetail from './pages/InsightDetail'
 import Metrics from './pages/Metrics'
+import MetricDetail from './pages/MetricDetail'
+import MetricCreate from './pages/MetricCreate'
+import MetricEdit from './pages/MetricEdit'
 import Segments from './pages/Segments'
+import SegmentDetail from './pages/SegmentDetail'
 import Experiments from './pages/Experiments'
-import Dashboard from './pages/Dashboard'
+import Home from './pages/Home'
 
 function App() {
   return (
@@ -14,10 +18,14 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/metrics" element={<Metrics />} />
+          <Route path="/metrics/new" element={<MetricCreate />} />
+          <Route path="/metrics/:id/edit" element={<MetricEdit />} />
+          <Route path="/metrics/:id" element={<MetricDetail />} />
           <Route path="/segments" element={<Segments />} />
+          <Route path="/segments/:id" element={<SegmentDetail />} />
           <Route path="/insights" element={<Insights />} />
+          <Route path="/insights/:category/:id" element={<InsightDetail />} />
           <Route path="/experiments" element={<Experiments />} />
-          <Route path="/dashboard" element={<Dashboard />} />
         </Routes>
       </Layout>
     </Router>
