@@ -1,6 +1,6 @@
 # DataHub
 
-<p align="center"> <img src="./assets/screenshot.png" width="800" /> </p>
+<p align="center"> <img src="./assets/data_hub.png" width="800" /> </p>
 
 ## DataHub를 만드는 이유
 
