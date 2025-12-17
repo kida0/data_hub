@@ -52,5 +52,6 @@ logs/
 # docs
 QUICKSTART.md
 README.md
+CLAUDE.md
 
 temp/
