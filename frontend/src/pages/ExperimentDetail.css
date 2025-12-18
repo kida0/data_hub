@@ -1,0 +1,331 @@
+.experiment-detail-page {
+  padding: 32px 40px;
+}
+
+/* Info Cards */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.info-card {
+  background: #ffffff;
+  border: 1px solid #e5e8eb;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.2s ease;
+}
+
+.info-card:hover {
+  border-color: #020760;
+  box-shadow: 0 4px 12px rgba(2, 7, 96, 0.08);
+}
+
+.info-label {
+  font-size: 13px;
+  color: #8b95a1;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.info-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: #191f28;
+  line-height: 1.5;
+}
+
+/* Owner Info */
+.owner-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.owner-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.owner-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.owner-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #191f28;
+}
+
+.owner-role {
+  font-size: 13px;
+  color: #8b95a1;
+}
+
+/* Experiment Type Badge */
+.experiment-type-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2563eb;
+}
+
+/* Goal Tag */
+.goal-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #15803d;
+  margin-bottom: 8px;
+}
+
+/* Detail Section */
+.detail-section {
+  background: #ffffff;
+  border: 1px solid #e5e8eb;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #191f28;
+  margin-bottom: 20px;
+}
+
+.detail-grid-3col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.detail-label {
+  font-size: 13px;
+  color: #8b95a1;
+  font-weight: 500;
+}
+
+.detail-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: #191f28;
+}
+
+.ice-breakdown {
+  font-size: 12px;
+  color: #6b7280;
+  margin-left: 8px;
+  font-weight: 400;
+}
+
+/* Hypothesis Section */
+.hypothesis-content {
+  padding: 16px 20px;
+  background: #f8f9fa;
+  border-left: 4px solid #020760;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #191f28;
+  line-height: 1.7;
+}
+
+/* Variants Section */
+.variants-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.variant-detail-card {
+  background: #f8f9fa;
+  border: 1px solid #e5e8eb;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.variant-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.variant-detail-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #191f28;
+}
+
+.variant-detail-allocation {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.variant-detail-description {
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+/* Traffic Distribution */
+.traffic-distribution {
+  padding: 20px;
+  background: #ffffff;
+  border: 1px solid #e5e8eb;
+  border-radius: 8px;
+}
+
+.traffic-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #191f28;
+  margin-bottom: 12px;
+}
+
+.traffic-bar {
+  display: flex;
+  height: 40px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f3f4f6;
+}
+
+.traffic-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.traffic-label-text {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Metrics Section */
+.metrics-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.metric-item-detail {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.metric-label-detail {
+  font-size: 14px;
+  font-weight: 600;
+  color: #191f28;
+  min-width: 100px;
+}
+
+.metric-value-detail {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Info Item */
+.info-item {
+  padding: 16px 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.info-item:last-child {
+  margin-bottom: 0;
+}
+
+.info-item-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #191f28;
+  margin-bottom: 8px;
+}
+
+.info-item-content {
+  font-size: 14px;
+  color: #4e5968;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* Loading & Error */
+.loading,
+.error-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  font-size: 15px;
+}
+
+.loading {
+  color: #6b7280;
+}
+
+.error-message {
+  color: #ef4444;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .info-grid,
+  .detail-grid-3col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .variants-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .experiment-detail-page {
+    padding: 24px 20px;
+  }
+
+  .info-grid,
+  .detail-grid-3col {
+    grid-template-columns: 1fr;
+  }
+}
