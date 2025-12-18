@@ -115,20 +115,37 @@ function SegmentDetail() {
     return <div className="segment-detail-page"><div className="error">{error || '세그먼트를 찾을 수 없습니다.'}</div></div>
   }
 
+  const formatDate = (dateString) => {
+    if (!dateString) return '-'
+    const date = new Date(dateString)
+    return date.toLocaleString('ko-KR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  }
+
+  const parseTags = (tagsString) => {
+    if (!tagsString) return []
+    return tagsString.split(',').map(tag => tag.trim())
+  }
+
   return (
     <div className="segment-detail-page">
       {/* Breadcrumb */}
       <BreadCrumb
         items={[
           { label: 'Segment', onClick: () => navigate('/segments') },
-          { label: '최근 30일 활성 유저', active: true }
+          { label: segment.name, active: true }
         ]}
       />
 
       {/* Header */}
       <PageHeader
-        title="최근 30일 활성 유저"
-        subtitle="지난 30일 동안 1회 이상 로그인하고 핵심 기능을 사용한 활성 사용자 그룹입니다."
+        title={segment.name}
+        subtitle={segment.description}
         actions={
           <>
             <button className="btn btn-secondary">
@@ -139,7 +156,7 @@ function SegmentDetail() {
               </svg>
               사용자 추출
             </button>
-            <button className="btn btn-primary">
+            <button className="btn btn-primary" onClick={() => navigate(`/segments/${id}/edit`)}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -158,7 +175,7 @@ function SegmentDetail() {
             <div className="owner-info">
               <div className="owner-avatar">키</div>
               <div className="owner-details">
-                <div className="owner-name">키다</div>
+                <div className="owner-name">{segment.segment_owner || '키다'}</div>
                 <div className="owner-role">Data Team · Data Analyst</div>
               </div>
             </div>
@@ -168,20 +185,19 @@ function SegmentDetail() {
           <div className="info-label">진행 캠페인</div>
           <div className="info-value">
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <button className="campaign-btn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-                </svg>
-                프리미엄 전환 캠페인
-              </button>
-              <button className="campaign-btn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-                </svg>
-                신규 기능 안내
-              </button>
+              {segment.campaigns && segment.campaigns.length > 0 ? (
+                segment.campaigns.map((campaign) => (
+                  <button key={campaign.id} className="campaign-btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                    {campaign.name}
+                  </button>
+                ))
+              ) : (
+                <span style={{ fontSize: '13px', color: '#8b95a1' }}>진행 중인 캠페인 없음</span>
+              )}
             </div>
           </div>
         </div>
@@ -201,81 +217,69 @@ function SegmentDetail() {
         <div className="section-title">상세 정보</div>
         <div className="detail-grid">
           <div className="detail-item">
-            <div className="detail-label">분류</div>
+            <div className="detail-label">카테고리</div>
             <div className="detail-value">
-              <Badge variant="category">User Behavior</Badge>
+              {segment.category ? <Badge variant="category">{segment.category}</Badge> : '-'}
             </div>
           </div>
           <div className="detail-item">
             <div className="detail-label">태그</div>
             <div className="detail-value">
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                <Badge variant="info">활성 유저</Badge>
-                <Badge variant="info">마케팅</Badge>
-                <Badge variant="info">리텐션</Badge>
+                {parseTags(segment.tags).length > 0 ? (
+                  parseTags(segment.tags).map((tag, idx) => (
+                    <Badge key={idx} variant="info">{tag}</Badge>
+                  ))
+                ) : (
+                  <span>-</span>
+                )}
               </div>
             </div>
           </div>
           <div className="detail-item">
-            <div className="detail-label">갱신 주기</div>
-            <div className="detail-value">매일 자정 (KST)</div>
+            <div className="detail-label">업데이트 주기</div>
+            <div className="detail-value">{segment.refresh_period || '-'}</div>
+          </div>
+          <div className="detail-item">
+            <div className="detail-label">마지막 터치</div>
+            <div className="detail-value">
+              {segment.last_touch_channel ? `${segment.last_touch_channel} (${formatDate(segment.last_touch_date)})` : '-'}
+            </div>
           </div>
           <div className="detail-item">
             <div className="detail-label">생성일</div>
-            <div className="detail-value">2023년 5월 20일</div>
+            <div className="detail-value">{formatDate(segment.created_at)}</div>
           </div>
           <div className="detail-item">
-            <div className="detail-label">마지막 갱신</div>
-            <div className="detail-value">2024년 12월 14일 00:05</div>
-          </div>
-          <div className="detail-item">
-            <div className="detail-label">데이터 소스</div>
-            <div className="detail-value">user_sessions, user_events, feature_usage</div>
+            <div className="detail-label">마지막 업데이트</div>
+            <div className="detail-value">{formatDate(segment.updated_at)}</div>
           </div>
         </div>
       </div>
 
       {/* Segment Conditions (Collapsible) */}
-      <CollapsibleSection title="세그먼트 조건" defaultExpanded={true}>
-        <div className="condition-list">
-          <div className="condition-item">
-            <span className="condition-field">최근 로그인</span>
-            <span className="condition-operator-inline">is within</span>
-            <span className="condition-value">30일 이내</span>
+      {segment.query && (
+        <CollapsibleSection title="세그먼트 쿼리" defaultExpanded={false}>
+          <div className="query-display">
+            <pre className="query-code">{segment.query}</pre>
           </div>
-          <div className="condition-operator">AND</div>
-          <div className="condition-item">
-            <span className="condition-field">세션 수</span>
-            <span className="condition-operator-inline">≥</span>
-            <span className="condition-value">3회</span>
-          </div>
-          <div className="condition-operator">AND</div>
-          <div className="condition-item">
-            <span className="condition-field">핵심 기능 사용</span>
-            <span className="condition-operator-inline">≥</span>
-            <span className="condition-value">1회</span>
-          </div>
-          <div className="condition-operator">AND</div>
-          <div className="condition-item">
-            <span className="condition-field">회원 등급</span>
-            <span className="condition-operator-inline">in</span>
-            <span className="condition-value">일반, 프리미엄</span>
-          </div>
-          <div className="condition-operator">AND</div>
-          <div className="condition-item">
-            <span className="condition-field">가입 경로</span>
-            <span className="condition-operator-inline">is not</span>
-            <span className="condition-value">테스트 계정</span>
-          </div>
-        </div>
-      </CollapsibleSection>
+        </CollapsibleSection>
+      )}
 
       {/* Stats Cards */}
       <div className="stats-grid">
-        <StatsCard label="현재 세그먼트 규모" value="42,847" change="+5.2% from last week" changeType="positive" />
-        <StatsCard label="전체 유저 대비 비율" value="68.3%" change="+2.1% from last week" changeType="positive" />
-        <StatsCard label="평균 세션 시간" value="18.5분" change="+1.3분 from last week" changeType="positive" />
-        <StatsCard label="30일 유지율" value="73.2%" change="-1.5% from last week" changeType="negative" />
+        {segment.metric1_label && segment.metric1_value && (
+          <StatsCard label={segment.metric1_label} value={segment.metric1_value} changeType="neutral" />
+        )}
+        {segment.metric2_label && segment.metric2_value && (
+          <StatsCard label={segment.metric2_label} value={segment.metric2_value} changeType="neutral" />
+        )}
+        {segment.metric3_label && segment.metric3_value && (
+          <StatsCard label={segment.metric3_label} value={segment.metric3_value} changeType="neutral" />
+        )}
+        {segment.metric4_label && segment.metric4_value && (
+          <StatsCard label={segment.metric4_label} value={segment.metric4_value} changeType="neutral" />
+        )}
       </div>
 
       {/* Trend Chart */}

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
 import StatsCard from '../components/StatsCard'
 import Badge from '../components/Badge'
+import MetricPriorityModal from '../components/MetricPriorityModal'
 import './Metrics.css'
 import { metricsAPI } from '../services/api'
 
@@ -20,6 +21,7 @@ function Metrics() {
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [categoryFilter, setCategoryFilter] = useState('')
+  const [isPriorityModalOpen, setIsPriorityModalOpen] = useState(false)
   const itemsPerPage = 10
 
   useEffect(() => {
@@ -65,6 +67,12 @@ function Metrics() {
 
   const handleRowClick = (id) => {
     navigate(`/metrics/${id}`)
+  }
+
+  const handlePrioritySave = (priorityMetrics) => {
+    // 우선순위 저장 후 지표 목록 새로고침
+    fetchMetrics()
+    console.log('Saved priorities:', priorityMetrics)
   }
 
   if (loading) {
@@ -134,7 +142,7 @@ function Metrics() {
             </select>
           </div>
           <div className="search-filter">
-            <button className="btn-compact btn-secondary">
+            <button className="btn-compact btn-secondary" onClick={() => setIsPriorityModalOpen(true)}>
               <span>지표 관리</span>
             </button>
             <button className="btn-compact btn-primary" onClick={() => navigate('/metrics/new')}>
@@ -258,6 +266,13 @@ function Metrics() {
           </div>
         )}
       </div>
+
+      {/* 지표 우선순위 관리 모달 */}
+      <MetricPriorityModal
+        isOpen={isPriorityModalOpen}
+        onClose={() => setIsPriorityModalOpen(false)}
+        onSave={handlePrioritySave}
+      />
     </div>
   )
 }

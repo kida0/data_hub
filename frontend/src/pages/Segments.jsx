@@ -52,9 +52,7 @@ function Segments() {
   }
 
   const handleRowClick = (segmentId) => {
-    if (segmentId === 1) {
-      navigate(`/segments/${segmentId}`)
-    }
+    navigate(`/segments/${segmentId}`)
   }
 
   const getChannelIcon = (channel) => {
@@ -181,7 +179,7 @@ function Segments() {
             <button className="btn-compact btn-secondary">
               <span>세그먼트 관리</span>
             </button>
-            <button className="btn-compact btn-primary">
+            <button className="btn-compact btn-primary" onClick={() => navigate('/segments/new')}>
               <span>+ 새 세그먼트</span>
             </button>
           </div>
@@ -231,7 +229,7 @@ function Segments() {
                   return (
                     <tr
                       key={segment.id}
-                      className={segment.id === 1 ? 'clickable-row' : 'non-clickable-row'}
+                      className="clickable-row"
                       onClick={() => handleRowClick(segment.id)}
                     >
                       <td className="segment-number">{String(rowNumber).padStart(3, '0')}</td>
@@ -239,19 +237,17 @@ function Segments() {
                         <div className="segment-name-cell">
                           <div className="segment-name-text">
                             {segment.name}
-                            {segment.id === 1 && (
-                              <svg
-                                width="16"
-                                height="16"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                style={{ marginLeft: '8px', verticalAlign: 'middle' }}
-                              >
-                                <polyline points="9 18 15 12 9 6"></polyline>
-                              </svg>
-                            )}
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              style={{ marginLeft: '8px', verticalAlign: 'middle' }}
+                            >
+                              <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
                           </div>
                           <div className="segment-desc-text">{segment.description}</div>
                         </div>

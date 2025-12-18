@@ -109,17 +109,173 @@ function MetricDetail() {
   }
 
   // 그래프 데이터 준비
+  const hasVisitorCount = timeSeriesData.some(point => point.visitor_count !== null && point.visitor_count !== undefined)
+
   const chartData = {
     labels: timeSeriesData.map(point => {
       const date = new Date(point.timestamp)
       return `${date.getMonth() + 1}/${date.getDate()}`
     }),
-    datasets: [
+    datasets: hasVisitorCount ? [
+      {
+        label: '결제 화면 진입 수',
+        data: timeSeriesData.map(point => point.visitor_count),
+        backgroundColor: 'rgba(2, 7, 96, 0.1)',
+        borderColor: 'rgba(2, 7, 96, 0.3)',
+        borderWidth: 1,
+        type: 'bar',
+        yAxisID: 'y',
+        order: 2
+      },
+      {
+        label: 'CVR (%)',
+        data: timeSeriesData.map(point => point.value),
+        type: 'line',
+        borderColor: '#020760',
+        backgroundColor: 'rgba(2, 7, 96, 0.05)',
+        borderWidth: 3,
+        pointRadius: 4,
+        pointBackgroundColor: '#020760',
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 2,
+        pointHoverRadius: 6,
+        tension: 0.3,
+        fill: true,
+        yAxisID: 'y1',
+        order: 1
+      }
+    ] : [
       createDataset(metric.name, timeSeriesData.map(point => point.value), chartColors.primary, 'line')
     ]
   }
 
-  const chartOptions = {
+  const chartOptions = hasVisitorCount ? {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: {
+      mode: 'index',
+      intersect: false,
+    },
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+        align: 'end',
+        labels: {
+          usePointStyle: true,
+          padding: 20,
+          font: {
+            family: 'Pretendard',
+            size: 13,
+            weight: '600'
+          }
+        }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(25, 31, 40, 0.95)',
+        titleFont: {
+          family: 'Pretendard',
+          size: 13,
+          weight: '600'
+        },
+        bodyFont: {
+          family: 'Pretendard',
+          size: 13
+        },
+        padding: 12,
+        borderColor: '#e5e8eb',
+        borderWidth: 1,
+        cornerRadius: 8,
+        callbacks: {
+          label: function(context) {
+            let label = context.dataset.label || '';
+            if (label) {
+              label += ': ';
+            }
+            if (context.parsed.y !== null) {
+              if (context.datasetIndex === 0) {
+                label += context.parsed.y.toLocaleString() + '명';
+              } else {
+                label += parseFloat(context.parsed.y.toFixed(2)) + '%';
+              }
+            }
+            return label;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false
+        },
+        ticks: {
+          font: {
+            family: 'Pretendard',
+            size: 12
+          },
+          color: '#8b95a1'
+        }
+      },
+      y: {
+        type: 'linear',
+        display: true,
+        position: 'left',
+        beginAtZero: true,
+        grid: {
+          color: '#f2f4f6'
+        },
+        ticks: {
+          font: {
+            family: 'Pretendard',
+            size: 12
+          },
+          color: '#8b95a1',
+          callback: function(value) {
+            return value.toLocaleString() + '명';
+          }
+        },
+        title: {
+          display: true,
+          text: '결제 화면 진입 수',
+          font: {
+            family: 'Pretendard',
+            size: 13,
+            weight: '600'
+          },
+          color: '#4e5968'
+        }
+      },
+      y1: {
+        type: 'linear',
+        display: true,
+        position: 'right',
+        grid: {
+          drawOnChartArea: false,
+        },
+        ticks: {
+          font: {
+            family: 'Pretendard',
+            size: 12
+          },
+          color: '#8b95a1',
+          callback: function(value) {
+            return parseFloat(value.toFixed(2)) + '%';
+          }
+        },
+        title: {
+          display: true,
+          text: 'CVR (%)',
+          font: {
+            family: 'Pretendard',
+            size: 13,
+            weight: '600'
+          },
+          color: '#4e5968'
+        }
+      }
+    }
+  } : {
     plugins: {
       legend: {
         display: false
@@ -127,7 +283,7 @@ function MetricDetail() {
       tooltip: {
         callbacks: {
           label: function(context) {
-            return `${context.parsed.y}${metric.unit || ''}`
+            return `${parseFloat(context.parsed.y.toFixed(2))}${metric.unit || ''}`
           }
         }
       }
@@ -136,7 +292,7 @@ function MetricDetail() {
       y: {
         ticks: {
           callback: function(value) {
-            return value + (metric.unit || '')
+            return parseFloat(value.toFixed(2)) + (metric.unit || '')
           }
         }
       }

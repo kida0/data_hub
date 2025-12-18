@@ -110,7 +110,8 @@ class MetricService:
         return [
             {
                 "timestamp": point.timestamp.isoformat(),
-                "value": point.value
+                "value": point.value,
+                "visitor_count": point.visitor_count
             }
             for point in data_points
         ]

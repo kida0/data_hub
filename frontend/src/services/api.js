@@ -36,5 +36,14 @@ export const segmentsAPI = {
   delete: (id) => api.delete(`/api/segments/${id}`),
 }
 
+// Experiments API
+export const experimentsAPI = {
+  getAll: (params) => api.get('/api/experiments/', { params }),
+  getById: (id) => api.get(`/api/experiments/${id}`),
+  create: (data) => api.post('/api/experiments/', data),
+  update: (id, data) => api.put(`/api/experiments/${id}`, data),
+  delete: (id) => api.delete(`/api/experiments/${id}`),
+}
+
 export default api
 

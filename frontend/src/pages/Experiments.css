@@ -417,4 +417,63 @@
   color: #1d4ed8;
 }
 
+/* Experiment Info */
+.experiment-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #f2f4f6;
+}
 
+.info-item {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.info-label {
+  color: #8b95a1;
+  font-weight: 500;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.info-value {
+  color: #191f28;
+  flex: 1;
+  line-height: 1.5;
+}
+
+/* Empty States */
+.pipeline-empty {
+  padding: 20px;
+  text-align: center;
+  color: #8b95a1;
+  font-size: 13px;
+}
+
+.no-experiments {
+  padding: 60px 20px;
+  text-align: center;
+  color: #8b95a1;
+  font-size: 14px;
+}
+
+/* Loading & Error */
+.loading {
+  padding: 60px 20px;
+  text-align: center;
+  color: #8b95a1;
+  font-size: 14px;
+}
+
+.error-message {
+  padding: 20px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 14px;
+  text-align: center;
+}

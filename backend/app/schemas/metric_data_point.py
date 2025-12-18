@@ -5,6 +5,7 @@ from datetime import datetime
 class MetricDataPointBase(BaseModel):
     metric_id: int
     value: float
+    visitor_count: int | None = None
     timestamp: datetime
 
 

@@ -10,6 +10,7 @@ class MetricDataPoint(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     metric_id = Column(Integer, ForeignKey("metrics.id", ondelete="CASCADE"), nullable=False)
     value = Column(Float, nullable=False)
+    visitor_count = Column(Integer, nullable=True)
     timestamp = Column(DateTime(timezone=True), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
