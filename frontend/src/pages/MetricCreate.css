@@ -1,6 +1,7 @@
 .metric-create-page {
   padding: 32px 40px;
   max-width: 900px;
+  margin: 0 auto;
 }
 
 .form-container {
@@ -175,6 +176,10 @@
   border-radius: 8px;
   font-size: 14px;
   margin-bottom: 20px;
+}
+
+.form-section:last-of-type .preparing-notice {
+  margin-bottom: 0;
 }
 
 .info-notice {

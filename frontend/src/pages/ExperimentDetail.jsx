@@ -1,16 +1,20 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import BreadCrumb from '../components/BreadCrumb'
-import PageHeader from '../components/PageHeader'
-import CollapsibleSection from '../components/CollapsibleSection'
 import Badge from '../components/Badge'
-import { experimentsAPI } from '../services/api'
+import { experimentsAPI, metricsAPI, segmentsAPI } from '../services/api'
 import './ExperimentDetail.css'
 
 function ExperimentDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [experiment, setExperiment] = useState(null)
+  const [segment, setSegment] = useState(null)
+  const [metrics, setMetrics] = useState({
+    primary: [],
+    secondary: [],
+    guardrail: []
+  })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -22,7 +26,45 @@ function ExperimentDetail() {
     try {
       setLoading(true)
       const response = await experimentsAPI.getById(id)
-      setExperiment(response.data)
+      const experimentData = response.data
+      setExperiment(experimentData)
+
+      // 세그먼트 정보 로드
+      if (experimentData.target_segment_id) {
+        try {
+          const segmentResponse = await segmentsAPI.getById(experimentData.target_segment_id)
+          setSegment(segmentResponse.data)
+        } catch (err) {
+          console.error('Error loading segment:', err)
+        }
+      }
+
+      // 메트릭 정보 로드
+      const primaryIds = experimentData.primary_metric_ids
+        ? JSON.parse(experimentData.primary_metric_ids)
+        : []
+      const secondaryIds = experimentData.secondary_metric_ids
+        ? JSON.parse(experimentData.secondary_metric_ids)
+        : []
+      const guardrailIds = experimentData.guardrail_metric_ids
+        ? JSON.parse(experimentData.guardrail_metric_ids)
+        : []
+
+      if (primaryIds.length > 0 || secondaryIds.length > 0 || guardrailIds.length > 0) {
+        try {
+          const metricsResponse = await metricsAPI.getAll()
+          const allMetrics = metricsResponse.data.items
+
+          setMetrics({
+            primary: allMetrics.filter(m => primaryIds.includes(m.id)),
+            secondary: allMetrics.filter(m => secondaryIds.includes(m.id)),
+            guardrail: allMetrics.filter(m => guardrailIds.includes(m.id))
+          })
+        } catch (err) {
+          console.error('Error loading metrics:', err)
+        }
+      }
+
       setError(null)
     } catch (err) {
       console.error('Error fetching experiment:', err)
@@ -51,14 +93,6 @@ function ExperimentDetail() {
   // Variants 파싱
   const variants = experiment.variants ? JSON.parse(experiment.variants) : []
 
-  // Secondary metrics 파싱
-  const secondaryMetricIds = experiment.secondary_metric_ids
-    ? JSON.parse(experiment.secondary_metric_ids)
-    : []
-
-  // ICE 총점 계산
-  const iceTotal = (experiment.ice_impact || 0) + (experiment.ice_confidence || 0) + (experiment.ice_ease || 0)
-
   // 상태에 따른 배지 variant
   const getStatusVariant = (status) => {
     const statusMap = {
@@ -83,6 +117,17 @@ function ExperimentDetail() {
     return statusMap[status] || status
   }
 
+  // 실험 기간 계산
+  const calculateDuration = () => {
+    if (!experiment.start_date || !experiment.end_date) return null
+    const start = new Date(experiment.start_date)
+    const end = new Date(experiment.end_date)
+    const diff = Math.ceil((end - start) / (1000 * 60 * 60 * 24))
+    return diff > 0 ? diff : null
+  }
+
+  const duration = calculateDuration()
+
   return (
     <div className="experiment-detail-page">
       {/* Breadcrumb */}
@@ -94,189 +139,258 @@ function ExperimentDetail() {
       />
 
       {/* Header */}
-      <PageHeader
-        title={experiment.name}
-        subtitle={experiment.description}
-        actions={
-          <>
-            <button className="btn btn-secondary">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-              실험 완료
-            </button>
-            <button className="btn btn-primary" onClick={() => navigate(`/experiments/${id}/edit`)}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-              </svg>
-              수정
-            </button>
-          </>
-        }
-      >
-        <div className="goal-tag">목표: {experiment.objective}</div>
-      </PageHeader>
-
-      {/* Basic Info Cards */}
-      <div className="info-grid">
-        <div className="info-card">
-          <div className="info-label">담당자</div>
-          <div className="info-value">
-            <div className="owner-info">
-              <div className="owner-avatar">{experiment.owner?.substring(0, 1) || 'U'}</div>
-              <div className="owner-details">
-                <div className="owner-name">{experiment.owner}</div>
-                <div className="owner-role">{experiment.team || 'Team'}</div>
-              </div>
-            </div>
+      <div className="detail-header">
+        <div className="detail-header-top">
+          <div>
+            <h1 className="detail-title">{experiment.name}</h1>
+            {experiment.description && (
+              <p className="detail-subtitle">{experiment.description}</p>
+            )}
           </div>
+          <button className="btn btn-primary" onClick={() => navigate(`/experiments/${id}/edit`)}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            수정
+          </button>
         </div>
-        <div className="info-card">
-          <div className="info-label">실험 유형</div>
-          <div className="info-value">
-            <span className="experiment-type-badge">{experiment.experiment_type}</span>
-          </div>
-        </div>
-        <div className="info-card">
-          <div className="info-label">진행 상태</div>
-          <div className="info-value">
-            <Badge variant={getStatusVariant(experiment.status)}>
-              {getStatusText(experiment.status)}
-            </Badge>
-          </div>
+        <div className="detail-header-meta">
+          <Badge variant={getStatusVariant(experiment.status)}>
+            {getStatusText(experiment.status)}
+          </Badge>
+          <span className="meta-divider">|</span>
+          <span className="meta-item">
+            <strong>목표:</strong> {experiment.objective}
+          </span>
+          <span className="meta-divider">|</span>
+          <span className="meta-item">
+            <strong>담당:</strong> {experiment.owner} ({experiment.team})
+          </span>
+          <span className="meta-divider">|</span>
+          <span className="meta-item">
+            <strong>유형:</strong> {experiment.experiment_type}
+          </span>
+          <span className="meta-divider">|</span>
+          <span className="meta-item">
+            <strong>단위:</strong> {experiment.experiment_unit || 'User'}
+          </span>
         </div>
       </div>
 
-      {/* Detailed Information */}
-      <div className="detail-section">
-        <div className="section-title">상세 정보</div>
-        <div className="detail-grid-3col">
-          <div className="detail-item">
-            <div className="detail-label">실험 기간</div>
-            <div className="detail-value">
-              {experiment.start_date} ~ {experiment.end_date}
+      {/* Main Content - 2 Column Layout */}
+      <div className="detail-content">
+        {/* Left Column - 실험 계획 */}
+        <div className="detail-main-column">
+
+          {/* 실험 배경 & 가설 */}
+          <div className="section-block">
+            <div className="section-header">
+              <h2 className="section-title">실험 계획</h2>
             </div>
-          </div>
-          <div className="detail-item">
-            <div className="detail-label">통계적 신뢰도</div>
-            <div className="detail-value">{experiment.statistical_significance}%</div>
-          </div>
-          <div className="detail-item">
-            <div className="detail-label">통계적 검증력</div>
-            <div className="detail-value">{experiment.statistical_power}%</div>
-          </div>
-        </div>
-        <div className="detail-grid-3col" style={{ marginTop: '20px' }}>
-          <div className="detail-item">
-            <div className="detail-label">MDE (최소 감지 효과)</div>
-            <div className="detail-value">{experiment.minimum_detectable_effect}%</div>
-          </div>
-          {iceTotal > 0 && (
-            <div className="detail-item">
-              <div className="detail-label">ICE 총점</div>
-              <div className="detail-value">
-                {iceTotal}점
-                <span className="ice-breakdown">
-                  (I:{experiment.ice_impact} C:{experiment.ice_confidence} E:{experiment.ice_ease})
-                </span>
+
+            <div className="plan-item">
+              <div className="plan-label">배경</div>
+              <div className="plan-content">{experiment.background || '배경 정보 없음'}</div>
+            </div>
+
+            <div className="plan-item highlight">
+              <div className="plan-label">가설</div>
+              <div className="plan-content">{experiment.hypothesis}</div>
+            </div>
+
+            {experiment.expected_impact && (
+              <div className="plan-item">
+                <div className="plan-label">예상 효과</div>
+                <div className="plan-content">{experiment.expected_impact}</div>
               </div>
-            </div>
-          )}
-          {experiment.progress !== null && experiment.progress > 0 && (
-            <div className="detail-item">
-              <div className="detail-label">진행률</div>
-              <div className="detail-value">{experiment.progress}%</div>
-            </div>
-          )}
-        </div>
-      </div>
+            )}
+          </div>
 
-      {/* Hypothesis Section */}
-      <CollapsibleSection title="가설" defaultExpanded={true}>
-        <div className="hypothesis-content">
-          {experiment.hypothesis}
-        </div>
-      </CollapsibleSection>
-
-      {/* Variants Section */}
-      <CollapsibleSection title="실험 변수 (Variants)" defaultExpanded={true}>
-        <div className="variants-grid">
-          {variants.map((variant, index) => (
-            <div key={index} className="variant-detail-card">
-              <div className="variant-detail-header">
-                <div className="variant-detail-name">{variant.name}</div>
-                <div className="variant-detail-allocation">{variant.traffic_allocation}%</div>
-              </div>
-              {variant.description && (
-                <div className="variant-detail-description">{variant.description}</div>
-              )}
+          {/* 실험 대상 */}
+          <div className="section-block">
+            <div className="section-header">
+              <h2 className="section-title">실험 대상</h2>
             </div>
-          ))}
-        </div>
-
-        {/* Traffic Distribution Visual */}
-        <div className="traffic-distribution">
-          <div className="traffic-label">트래픽 분배</div>
-          <div className="traffic-bar">
-            {variants.map((variant, index) => (
-              <div
-                key={index}
-                className="traffic-segment"
-                style={{
-                  width: `${variant.traffic_allocation}%`,
-                  backgroundColor: index === 0 ? '#8b95a1' : `hsl(${210 + index * 30}, 70%, 60%)`
-                }}
-                title={`${variant.name}: ${variant.traffic_allocation}%`}
-              >
-                {variant.traffic_allocation >= 10 && (
-                  <span className="traffic-label-text">{variant.traffic_allocation}%</span>
+            {segment ? (
+              <div className="segment-box">
+                <div className="segment-box-header">
+                  <span className="segment-box-name">{segment.name}</span>
+                  <span className="segment-box-count">{segment.customer_count?.toLocaleString() || 0}명</span>
+                </div>
+                {segment.description && (
+                  <div className="segment-box-desc">{segment.description}</div>
                 )}
               </div>
-            ))}
+            ) : (
+              <div className="empty-box">세그먼트 정보 없음</div>
+            )}
+          </div>
+
+          {/* 측정 지표 */}
+          <div className="section-block">
+            <div className="section-header">
+              <h2 className="section-title">측정 지표</h2>
+            </div>
+
+            {metrics.primary.length > 0 && (
+              <div className="metrics-group">
+                <div className="metrics-group-label primary">
+                  주요 지표 <span className="count">({metrics.primary.length})</span>
+                </div>
+                <div className="metrics-list">
+                  {metrics.primary.map((metric, index) => (
+                    <div key={metric.id} className="metric-item">
+                      <span className="metric-number">{index + 1}.</span>
+                      <div className="metric-info">
+                        <div className="metric-name">{metric.name}</div>
+                        {metric.description && (
+                          <div className="metric-desc">{metric.description}</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {metrics.secondary.length > 0 && (
+              <div className="metrics-group">
+                <div className="metrics-group-label secondary">
+                  보조 지표 <span className="count">({metrics.secondary.length})</span>
+                </div>
+                <div className="metrics-list">
+                  {metrics.secondary.map((metric, index) => (
+                    <div key={metric.id} className="metric-item">
+                      <span className="metric-number">{index + 1}.</span>
+                      <div className="metric-info">
+                        <div className="metric-name">{metric.name}</div>
+                        {metric.description && (
+                          <div className="metric-desc">{metric.description}</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {metrics.guardrail.length > 0 && (
+              <div className="metrics-group">
+                <div className="metrics-group-label guardrail">
+                  가드레일 지표 <span className="count">({metrics.guardrail.length})</span>
+                </div>
+                <div className="metrics-list">
+                  {metrics.guardrail.map((metric, index) => (
+                    <div key={metric.id} className="metric-item">
+                      <span className="metric-number">{index + 1}.</span>
+                      <div className="metric-info">
+                        <div className="metric-name">{metric.name}</div>
+                        {metric.description && (
+                          <div className="metric-desc">{metric.description}</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      </CollapsibleSection>
 
-      {/* Metrics Section */}
-      <CollapsibleSection title="측정 지표" defaultExpanded={true}>
-        <div className="metrics-section">
-          <div className="metric-item-detail">
-            <div className="metric-label-detail">핵심 지표</div>
-            <div className="metric-value-detail">
-              <Badge variant="info">Metric ID: {experiment.primary_metric_id}</Badge>
+        {/* Right Column - 실험 설정 */}
+        <div className="detail-side-column">
+
+          {/* 실험 기간 */}
+          <div className="section-block compact">
+            <div className="section-header">
+              <h2 className="section-title">실험 기간</h2>
+            </div>
+            <div className="period-compact">
+              <div className="period-compact-row">
+                <span className="period-compact-label">시작</span>
+                <span className="period-compact-value">{experiment.start_date || '미정'}</span>
+              </div>
+              <div className="period-compact-row">
+                <span className="period-compact-label">종료</span>
+                <span className="period-compact-value">{experiment.end_date || '미정'}</span>
+              </div>
+              {duration && (
+                <div className="period-compact-row highlight">
+                  <span className="period-compact-label">기간</span>
+                  <span className="period-compact-value">{duration}일</span>
+                </div>
+              )}
             </div>
           </div>
-          {secondaryMetricIds.length > 0 && (
-            <div className="metric-item-detail">
-              <div className="metric-label-detail">보조 지표</div>
-              <div className="metric-value-detail">
-                {secondaryMetricIds.map((metricId, index) => (
-                  <Badge key={index} variant="category">Metric ID: {metricId}</Badge>
+
+          {/* 실험 그룹 구성 */}
+          {variants.length > 0 && (
+            <div className="section-block compact">
+              <div className="section-header">
+                <h2 className="section-title">실험 그룹</h2>
+              </div>
+              <div className="variants-compact">
+                {variants.map((variant, index) => (
+                  <div key={index} className="variant-row">
+                    <div className="variant-row-header">
+                      <span className="variant-row-name">{variant.name}</span>
+                      <span className="variant-row-percent">{variant.traffic_allocation}%</span>
+                    </div>
+                    {variant.description && (
+                      <div className="variant-row-desc">{variant.description}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Traffic Bar */}
+              <div className="traffic-bar-compact">
+                {variants.map((variant, index) => (
+                  <div
+                    key={index}
+                    className="traffic-segment-compact"
+                    style={{
+                      width: `${variant.traffic_allocation}%`,
+                      backgroundColor: index === 0 ? '#8b95a1' : `hsl(${210 + index * 30}, 70%, 60%)`
+                    }}
+                    title={`${variant.name}: ${variant.traffic_allocation}%`}
+                  />
                 ))}
               </div>
             </div>
           )}
-        </div>
-      </CollapsibleSection>
 
-      {/* Additional Information */}
-      {(experiment.conditions || experiment.confounding_factors) && (
-        <CollapsibleSection title="추가 정보" defaultExpanded={true}>
-          {experiment.conditions && (
-            <div className="info-item">
-              <div className="info-item-label">실험 조건</div>
-              <div className="info-item-content">{experiment.conditions}</div>
+          {/* 통계적 설계 */}
+          <div className="section-block compact">
+            <div className="section-header">
+              <h2 className="section-title">통계적 설계</h2>
             </div>
-          )}
-          {experiment.confounding_factors && (
-            <div className="info-item">
-              <div className="info-item-label">교란 요소</div>
-              <div className="info-item-content">{experiment.confounding_factors}</div>
+            <div className="stats-compact">
+              <div className="stats-compact-row">
+                <span className="stats-compact-label">유의수준 (α)</span>
+                <span className="stats-compact-value">{experiment.significance_level || 0.05}</span>
+              </div>
+              <div className="stats-compact-row">
+                <span className="stats-compact-label">검정력 (1-β)</span>
+                <span className="stats-compact-value">{experiment.statistical_power || 0.8}</span>
+              </div>
+              {experiment.minimum_detectable_effect && (
+                <div className="stats-compact-row">
+                  <span className="stats-compact-label">MDE</span>
+                  <span className="stats-compact-value">{experiment.minimum_detectable_effect}</span>
+                </div>
+              )}
+              {experiment.sample_size && (
+                <div className="stats-compact-row">
+                  <span className="stats-compact-label">샘플 크기</span>
+                  <span className="stats-compact-value">{experiment.sample_size?.toLocaleString()}</span>
+                </div>
+              )}
             </div>
-          )}
-        </CollapsibleSection>
-      )}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

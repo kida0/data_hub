@@ -12,14 +12,12 @@ function MetricPriorityModal({ isOpen, onClose, onSave }) {
   const [priorityMetrics, setPriorityMetrics] = useState({
     P0: [],
     P1: [],
-    P2: [],
-    None: []
+    P2: []
   })
   const [collapsedZones, setCollapsedZones] = useState({
     P0: false,
     P1: false,
-    P2: false,
-    None: false
+    P2: false
   })
 
   useEffect(() => {
@@ -34,12 +32,11 @@ function MetricPriorityModal({ isOpen, onClose, onSave }) {
       const response = await metricsAPI.getAll({ limit: 100 })
       const allMetrics = response.data.items || []
 
-      // 우선순위별로 분류
+      // 우선순위별로 분류 (P0, P1, P2만 할당, 나머지는 왼쪽 패널에 표시)
       const grouped = {
         P0: allMetrics.filter(m => m.priority === 'P0'),
         P1: allMetrics.filter(m => m.priority === 'P1'),
-        P2: allMetrics.filter(m => m.priority === 'P2'),
-        None: allMetrics.filter(m => !m.priority || m.priority === 'None')
+        P2: allMetrics.filter(m => m.priority === 'P2')
       }
 
       setPriorityMetrics(grouped)
@@ -51,12 +48,11 @@ function MetricPriorityModal({ isOpen, onClose, onSave }) {
     }
   }
 
-  // 모든 섹션에서 이미 할당된 지표 제외
+  // 우선순위가 할당된 지표 제외 (왼쪽 패널에는 우선순위 없는 지표만 표시)
   const assignedMetricIds = [
     ...priorityMetrics.P0.map(m => m.id),
     ...priorityMetrics.P1.map(m => m.id),
-    ...priorityMetrics.P2.map(m => m.id),
-    ...priorityMetrics.None.map(m => m.id)
+    ...priorityMetrics.P2.map(m => m.id)
   ]
 
   const filteredMetrics = metrics.filter(metric => {
@@ -135,24 +131,62 @@ function MetricPriorityModal({ isOpen, onClose, onSave }) {
 
   const handleSave = async () => {
     try {
-      // 각 지표의 우선순위 업데이트
+      setLoading(true)
+
+      // 모든 지표의 우선순위 업데이트 준비
       const updates = []
+
+      // 우선순위가 할당된 지표들 (P0, P1, P2)
       Object.entries(priorityMetrics).forEach(([priority, metricsList]) => {
         metricsList.forEach(metric => {
           updates.push({
             id: metric.id,
-            priority: priority === 'None' ? null : priority
+            priority: priority
           })
         })
       })
 
-      // API 호출은 실제 구현에 따라 수정 필요
-      // await Promise.all(updates.map(update => metricsAPI.update(update.id, { priority: update.priority })))
+      // 왼쪽 패널에 남아있는 지표들 (우선순위 제거)
+      const unassignedMetrics = metrics.filter(m => !assignedMetricIds.includes(m.id))
+      unassignedMetrics.forEach(metric => {
+        // 이전에 우선순위가 있었다면 null로 업데이트
+        if (metric.priority && ['P0', 'P1', 'P2'].includes(metric.priority)) {
+          updates.push({
+            id: metric.id,
+            priority: null
+          })
+        }
+      })
 
-      onSave(priorityMetrics)
+      console.log('업데이트할 지표:', updates)
+
+      // API 호출하여 우선순위 업데이트
+      const results = await Promise.all(updates.map(async update => {
+        try {
+          const response = await metricsAPI.update(update.id, { priority: update.priority })
+          console.log(`지표 ${update.id} 업데이트 성공 (Priority: ${update.priority})`)
+          return { success: true, id: update.id }
+        } catch (error) {
+          console.error(`지표 ${update.id} 업데이트 실패:`, error)
+          return { success: false, id: update.id, error }
+        }
+      }))
+
+      const failures = results.filter(r => !r.success)
+      if (failures.length > 0) {
+        console.error('일부 지표 업데이트 실패:', failures)
+        alert(`${failures.length}개의 지표 업데이트에 실패했습니다.`)
+      } else {
+        console.log('모든 지표 업데이트 성공')
+      }
+
+      await onSave(priorityMetrics)
       onClose()
     } catch (err) {
       console.error('Error saving priorities:', err)
+      alert('우선순위 저장 중 오류가 발생했습니다: ' + err.message)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -161,8 +195,7 @@ function MetricPriorityModal({ isOpen, onClose, onSave }) {
   const priorityZones = [
     { key: 'P0', label: 'P0 (최우선)', description: '핵심 비즈니스 지표', color: '#ef4444' },
     { key: 'P1', label: 'P1 (중요)', description: '중요 모니터링 지표', color: '#f59e0b' },
-    { key: 'P2', label: 'P2 (보통)', description: '일반 추적 지표', color: '#3b82f6' },
-    { key: 'None', label: '제외', description: '우선순위 없음', color: '#9ca3af' }
+    { key: 'P2', label: 'P2 (보통)', description: '일반 추적 지표', color: '#3b82f6' }
   ]
 
   return (
@@ -172,7 +205,7 @@ function MetricPriorityModal({ isOpen, onClose, onSave }) {
           <div className="modal-header-content">
             <h2 className="modal-title-elegant">지표 우선순위 관리</h2>
             <p className="modal-subtitle">
-              지표를 드래그하여 우선순위를 설정하세요 (P0 ~ P2, 제외)
+              지표를 드래그하여 우선순위를 설정하세요 (P0 ~ P2)
             </p>
           </div>
           <button className="modal-close-btn-elegant" onClick={onClose}>
@@ -377,16 +410,25 @@ function MetricPriorityModal({ isOpen, onClose, onSave }) {
             <span>드래그하여 우선순위를 설정하거나, X 버튼으로 제거할 수 있습니다</span>
           </div>
           <div className="footer-actions">
-            <button className="btn-elegant btn-secondary-elegant" onClick={onClose}>
+            <button className="btn-elegant btn-secondary-elegant" onClick={onClose} disabled={loading}>
               취소
             </button>
-            <button className="btn-elegant btn-primary-elegant" onClick={handleSave}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                <polyline points="7 3 7 8 15 8"></polyline>
-              </svg>
-              저장
+            <button className="btn-elegant btn-primary-elegant" onClick={handleSave} disabled={loading}>
+              {loading ? (
+                <>
+                  <div className="loading-spinner" style={{ width: '18px', height: '18px' }}></div>
+                  저장 중...
+                </>
+              ) : (
+                <>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                  </svg>
+                  저장
+                </>
+              )}
             </button>
           </div>
         </div>

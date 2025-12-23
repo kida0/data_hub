@@ -5,7 +5,9 @@ import PageHeader from '../components/PageHeader'
 import StatsCard from '../components/StatsCard'
 import Badge from '../components/Badge'
 import TimeRangeSelector from '../components/TimeRangeSelector'
+import CollapsibleSection from '../components/CollapsibleSection'
 import ChartContainer from '../components/ChartContainer'
+import VersionHistoryModal from '../components/VersionHistoryModal'
 import { createDataset, chartColors } from '../utils/chartConfig'
 import './MetricDetail.css'
 import { metricsAPI } from '../services/api'
@@ -21,6 +23,7 @@ function MetricDetail() {
   const [editData, setEditData] = useState({})
   const [saving, setSaving] = useState(false)
   const [timeRange, setTimeRange] = useState('30')
+  const [isVersionModalOpen, setIsVersionModalOpen] = useState(false)
 
   useEffect(() => {
     fetchMetricDetail()
@@ -325,7 +328,7 @@ function MetricDetail() {
             </>
           ) : (
             <>
-              <button className="btn btn-secondary">
+              <button className="btn btn-secondary" onClick={() => setIsVersionModalOpen(true)}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="1"></circle>
                   <circle cx="12" cy="5" r="1"></circle>
@@ -413,27 +416,6 @@ function MetricDetail() {
       <div className="detail-section">
         <div className="section-title">상세 정보</div>
         <div className="detail-grid">
-          <div className="detail-item detail-item-full">
-            <div className="detail-label">계산 로직</div>
-            <div className="detail-value">{metric.calculation_logic || '-'}</div>
-          </div>
-          <div className="detail-item detail-item-full">
-            <div className="detail-label">데이터 소스</div>
-            <div className="detail-value">
-              {isEditMode ? (
-                <textarea
-                  value={editData.data_source}
-                  onChange={(e) => handleEditChange('data_source', e.target.value)}
-                  className="form-textarea"
-                  placeholder="예: payment_events, user_journey_logs"
-                  rows="2"
-                  style={{ width: '100%' }}
-                />
-              ) : (
-                metric.data_source || '데이터팀에서 설정 예정'
-              )}
-            </div>
-          </div>
           <div className="detail-item">
             <div className="detail-label">집계 기간</div>
             <div className="detail-value">
@@ -452,50 +434,11 @@ function MetricDetail() {
             </div>
           </div>
           <div className="detail-item">
-            <div className="detail-label">지표값</div>
-            <div className="detail-value">
-              {isEditMode ? (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <input
-                    type="number"
-                    step="any"
-                    value={editData.value}
-                    onChange={(e) => handleEditChange('value', e.target.value)}
-                    className="form-input"
-                    placeholder="지표값"
-                    style={{ flex: 1 }}
-                  />
-                  <input
-                    type="text"
-                    value={editData.unit}
-                    onChange={(e) => handleEditChange('unit', e.target.value)}
-                    className="form-input"
-                    placeholder="단위"
-                    style={{ width: '80px' }}
-                  />
-                </div>
-              ) : metric.value !== null && metric.value !== undefined ? (
-                <>
-                  {metric.value}
-                  {metric.unit && <span style={{ marginLeft: '4px' }}>{metric.unit}</span>}
-                </>
-              ) : (
-                '-'
-              )}
-            </div>
-          </div>
-          <div className="detail-item">
             <div className="detail-label">버전</div>
             <div className="detail-value">
               <span className="version">{metric.version || '-'}</span>
             </div>
           </div>
-          {metric.alert_settings && (
-            <div className="detail-item">
-              <div className="detail-label">Alert 설정</div>
-              <div className="detail-value">{metric.alert_settings}</div>
-            </div>
-          )}
           <div className="detail-item">
             <div className="detail-label">생성일</div>
             <div className="detail-value">{formatDate(metric.created_at)}</div>
@@ -504,34 +447,78 @@ function MetricDetail() {
             <div className="detail-label">마지막 업데이트</div>
             <div className="detail-value">{formatDate(metric.updated_at)}</div>
           </div>
+          <div className="detail-item detail-item-full">
+            <div className="detail-label">데이터 소스</div>
+            <div className="detail-value">
+              {isEditMode ? (
+                <textarea
+                  value={editData.data_source}
+                  onChange={(e) => handleEditChange('data_source', e.target.value)}
+                  className="form-textarea"
+                  placeholder="예: payment_events, user_journey_logs"
+                  rows="2"
+                  style={{ width: '100%' }}
+                />
+              ) : (
+                metric.data_source || '데이터팀에서 설정 예정'
+              )}
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Calculation Logic (Collapsible) */}
+      {metric.calculation_logic && (
+        <CollapsibleSection title="계산 로직" defaultExpanded={false}>
+          <div className="query-display">
+            <pre className="query-code">{metric.calculation_logic}</pre>
+          </div>
+        </CollapsibleSection>
+      )}
 
       {/* Stats Cards */}
       <div className="stats-grid">
         <StatsCard
           label="현재 지표값"
           value={metric.value !== null && metric.value !== undefined ? `${metric.value}${metric.unit || ''}` : '-'}
-          change="+5.2% from last week"
-          changeType="positive"
         />
         <StatsCard
-          label="30일 평균"
+          label={`${timeRange}일 평균`}
           value={timeSeriesData.length > 0 ? `${(timeSeriesData.reduce((sum, p) => sum + p.value, 0) / timeSeriesData.length).toFixed(2)}${metric.unit || ''}` : '-'}
-          change="+3.1% from previous"
-          changeType="positive"
         />
         <StatsCard
-          label="30일 최고값"
-          value={timeSeriesData.length > 0 ? `${Math.max(...timeSeriesData.map(p => p.value))}${metric.unit || ''}` : '-'}
-          change="+8.5% from previous"
-          changeType="positive"
+          label={`${timeRange}일 최고값`}
+          value={(() => {
+            if (timeSeriesData.length === 0) return '-'
+            const maxValue = Math.max(...timeSeriesData.map(p => p.value))
+            return `${maxValue}${metric.unit || ''}`
+          })()}
+          change={(() => {
+            if (timeSeriesData.length === 0) return undefined
+            const maxValue = Math.max(...timeSeriesData.map(p => p.value))
+            const maxDataPoint = timeSeriesData.find(p => p.value === maxValue)
+            if (!maxDataPoint) return undefined
+            const date = new Date(maxDataPoint.timestamp)
+            return date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
+          })()}
+          changeType="neutral"
         />
         <StatsCard
-          label="30일 최저값"
-          value={timeSeriesData.length > 0 ? `${Math.min(...timeSeriesData.map(p => p.value))}${metric.unit || ''}` : '-'}
-          change="+2.1% from previous"
-          changeType="positive"
+          label={`${timeRange}일 최저값`}
+          value={(() => {
+            if (timeSeriesData.length === 0) return '-'
+            const minValue = Math.min(...timeSeriesData.map(p => p.value))
+            return `${minValue}${metric.unit || ''}`
+          })()}
+          change={(() => {
+            if (timeSeriesData.length === 0) return undefined
+            const minValue = Math.min(...timeSeriesData.map(p => p.value))
+            const minDataPoint = timeSeriesData.find(p => p.value === minValue)
+            if (!minDataPoint) return undefined
+            const date = new Date(minDataPoint.timestamp)
+            return date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
+          })()}
+          changeType="neutral"
         />
       </div>
 
@@ -555,6 +542,13 @@ function MetricDetail() {
           <ChartContainer type="line" data={chartData} options={chartOptions} height={300} />
         </div>
       )}
+
+      {/* Version History Modal */}
+      <VersionHistoryModal
+        isOpen={isVersionModalOpen}
+        onClose={() => setIsVersionModalOpen(false)}
+        metricName={metric?.name || ''}
+      />
     </div>
   )
 }

@@ -10,24 +10,22 @@ class ExperimentBase(BaseModel):
     team: Optional[str] = None
     experiment_type: Optional[str] = "A/B Test"
     status: Optional[str] = "draft"
-    objective: Optional[str] = None
+    objective: str
+    background: str
     hypothesis: str
-    ice_impact: Optional[int] = None
-    ice_confidence: Optional[int] = None
-    ice_ease: Optional[int] = None
-    primary_metric_id: Optional[int] = None
+    expected_impact: Optional[str] = None
+    primary_metric_ids: str  # JSON string
     secondary_metric_ids: Optional[str] = None  # JSON string
-    start_date: date
-    end_date: date
-    target_segment_id: Optional[int] = None
-    variants: str  # JSON string
-    minimum_detectable_effect: Optional[float] = 5.0
-    statistical_significance: Optional[float] = 95.0
-    statistical_power: Optional[float] = 80.0
-    conditions: Optional[str] = None
-    confounding_factors: Optional[str] = None
-    progress: Optional[float] = 0.0
-    days_left: Optional[int] = None
+    guardrail_metric_ids: Optional[str] = None  # JSON string
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    target_segment_id: int
+    variants: Optional[str] = None  # JSON string
+    experiment_unit: Optional[str] = "User"
+    significance_level: Optional[float] = 0.05
+    statistical_power: Optional[float] = 0.8
+    minimum_detectable_effect: Optional[float] = None
+    sample_size: Optional[str] = None
 
 
 class ExperimentCreate(BaseModel):
@@ -38,21 +36,21 @@ class ExperimentCreate(BaseModel):
     experiment_type: str = "A/B Test"
     status: str = "draft"
     objective: str
+    background: str
     hypothesis: str
-    ice_impact: Optional[int] = None
-    ice_confidence: Optional[int] = None
-    ice_ease: Optional[int] = None
-    primary_metric_id: int
-    secondary_metric_ids: Optional[str] = None  # JSON string: '["1", "2"]'
-    start_date: date
-    end_date: date
+    expected_impact: Optional[str] = None
+    primary_metric_ids: str  # JSON string: '["1", "2"]'
+    secondary_metric_ids: Optional[str] = None  # JSON string
+    guardrail_metric_ids: Optional[str] = None  # JSON string
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
     target_segment_id: int
-    variants: str  # JSON string: '[{"name": "Control", "description": "", "traffic_allocation": 50}]'
-    minimum_detectable_effect: Optional[float] = 5.0
-    statistical_significance: Optional[float] = 95.0
-    statistical_power: Optional[float] = 80.0
-    conditions: Optional[str] = None
-    confounding_factors: Optional[str] = None
+    variants: Optional[str] = None  # JSON string (생성 시에는 선택)
+    experiment_unit: Optional[str] = "User"
+    significance_level: Optional[float] = 0.05
+    statistical_power: Optional[float] = 0.8
+    minimum_detectable_effect: Optional[float] = None
+    sample_size: Optional[str] = None
 
 
 class ExperimentUpdate(BaseModel):
@@ -63,23 +61,21 @@ class ExperimentUpdate(BaseModel):
     experiment_type: Optional[str] = None
     status: Optional[str] = None
     objective: Optional[str] = None
+    background: Optional[str] = None
     hypothesis: Optional[str] = None
-    ice_impact: Optional[int] = None
-    ice_confidence: Optional[int] = None
-    ice_ease: Optional[int] = None
-    primary_metric_id: Optional[int] = None
+    expected_impact: Optional[str] = None
+    primary_metric_ids: Optional[str] = None
     secondary_metric_ids: Optional[str] = None
+    guardrail_metric_ids: Optional[str] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     target_segment_id: Optional[int] = None
     variants: Optional[str] = None
-    minimum_detectable_effect: Optional[float] = None
-    statistical_significance: Optional[float] = None
+    experiment_unit: Optional[str] = None
+    significance_level: Optional[float] = None
     statistical_power: Optional[float] = None
-    conditions: Optional[str] = None
-    confounding_factors: Optional[str] = None
-    progress: Optional[float] = None
-    days_left: Optional[int] = None
+    minimum_detectable_effect: Optional[float] = None
+    sample_size: Optional[str] = None
 
 
 class ExperimentResponse(ExperimentBase):

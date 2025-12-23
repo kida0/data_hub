@@ -21,6 +21,8 @@ function Segments() {
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [sortField, setSortField] = useState(null)
+  const [sortDirection, setSortDirection] = useState('asc')
   const itemsPerPage = 10
 
   useEffect(() => {
@@ -53,6 +55,15 @@ function Segments() {
 
   const handleRowClick = (segmentId) => {
     navigate(`/segments/${segmentId}`)
+  }
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDirection('asc')
+    }
   }
 
   const getChannelIcon = (channel) => {
@@ -88,10 +99,31 @@ function Segments() {
     return matchesSearch && matchesCategory
   })
 
-  const totalPages = Math.ceil(filteredSegments.length / itemsPerPage)
+  const sortedSegments = [...filteredSegments].sort((a, b) => {
+    if (!sortField) return 0
+
+    let aValue, bValue
+
+    if (sortField === 'customer_count') {
+      aValue = a.customer_count || 0
+      bValue = b.customer_count || 0
+    } else if (sortField === 'category') {
+      aValue = a.category || ''
+      bValue = b.category || ''
+    } else if (sortField === 'last_touch_date') {
+      aValue = a.last_touch_date ? new Date(a.last_touch_date).getTime() : 0
+      bValue = b.last_touch_date ? new Date(b.last_touch_date).getTime() : 0
+    }
+
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1
+    return 0
+  })
+
+  const totalPages = Math.ceil(sortedSegments.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
-  const currentSegments = filteredSegments.slice(startIndex, endIndex)
+  const currentSegments = sortedSegments.slice(startIndex, endIndex)
 
   if (loading) {
     return (
@@ -176,9 +208,6 @@ function Segments() {
             </select>
           </div>
           <div className="search-filter">
-            <button className="btn-compact btn-secondary">
-              <span>세그먼트 관리</span>
-            </button>
             <button className="btn-compact btn-primary" onClick={() => navigate('/segments/new')}>
               <span>+ 새 세그먼트</span>
             </button>
@@ -191,32 +220,90 @@ function Segments() {
               <tr>
                 <th style={{ width: '60px' }}>#</th>
                 <th style={{ width: '240px' }}>세그먼트명</th>
-                <th className="align-right sortable" style={{ width: '110px' }}>
-                  고객 수
-                  <svg className="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M7 15l5 5 5-5M7 9l5-5 5 5" />
-                  </svg>
+                <th
+                  className="align-right sortable-header"
+                  style={{ width: '110px', cursor: 'pointer' }}
+                  onClick={() => handleSort('customer_count')}
+                >
+                  <div className="header-content" style={{ justifyContent: 'flex-end' }}>
+                    고객 수
+                    {sortField === 'customer_count' && (
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        style={{
+                          transform: sortDirection === 'desc' ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.2s',
+                        }}
+                      >
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                      </svg>
+                    )}
+                  </div>
                 </th>
-                <th className="align-right sortable" style={{ width: '110px' }}>
+                <th className="align-right" style={{ width: '110px' }}>
                   주요지표 1
-                  <svg className="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M7 15l5 5 5-5M7 9l5-5 5 5" />
-                  </svg>
                 </th>
-                <th className="align-right sortable" style={{ width: '110px' }}>
+                <th className="align-right" style={{ width: '110px' }}>
                   주요지표 2
-                  <svg className="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M7 15l5 5 5-5M7 9l5-5 5 5" />
-                  </svg>
                 </th>
-                <th className="align-right sortable" style={{ width: '110px' }}>
+                <th className="align-right" style={{ width: '110px' }}>
                   주요지표 3
-                  <svg className="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M7 15l5 5 5-5M7 9l5-5 5 5" />
-                  </svg>
                 </th>
-                <th style={{ width: '100px' }}>분류</th>
-                <th style={{ width: '180px' }}>마지막 터치</th>
+                <th
+                  style={{ width: '100px', cursor: 'pointer' }}
+                  onClick={() => handleSort('category')}
+                  className="sortable-header"
+                >
+                  <div className="header-content">
+                    분류
+                    {sortField === 'category' && (
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        style={{
+                          transform: sortDirection === 'desc' ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.2s',
+                        }}
+                      >
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                      </svg>
+                    )}
+                  </div>
+                </th>
+                <th
+                  style={{ width: '180px', cursor: 'pointer' }}
+                  onClick={() => handleSort('last_touch_date')}
+                  className="sortable-header"
+                >
+                  <div className="header-content">
+                    마지막 터치
+                    {sortField === 'last_touch_date' && (
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        style={{
+                          transform: sortDirection === 'desc' ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.2s',
+                        }}
+                      >
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                      </svg>
+                    )}
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody>

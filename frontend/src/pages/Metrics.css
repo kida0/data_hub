@@ -62,6 +62,22 @@
 
 /* Table - Use global styles from index.css */
 
+.sortable-header {
+  user-select: none;
+  transition: background-color 0.2s;
+}
+
+.sortable-header:hover {
+  background-color: #f8f9fa;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
 .metric-number {
   color: #8b95a1;
   font-weight: 500;

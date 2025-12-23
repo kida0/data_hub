@@ -7,6 +7,7 @@ import Badge from '../components/Badge'
 import TimeRangeSelector from '../components/TimeRangeSelector'
 import CollapsibleSection from '../components/CollapsibleSection'
 import ChartContainer from '../components/ChartContainer'
+import UserExportModal from '../components/UserExportModal'
 import { createDataset, chartColors } from '../utils/chartConfig'
 import './SegmentDetail.css'
 import { segmentsAPI } from '../services/api'
@@ -18,6 +19,7 @@ function SegmentDetail() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [timeRange, setTimeRange] = useState('30')
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false)
 
   useEffect(() => {
     fetchSegmentDetail()
@@ -148,7 +150,7 @@ function SegmentDetail() {
         subtitle={segment.description}
         actions={
           <>
-            <button className="btn btn-secondary">
+            <button className="btn btn-secondary" onClick={() => setIsExportModalOpen(true)}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                 <polyline points="7 10 12 15 17 10"></polyline>
@@ -312,6 +314,13 @@ function SegmentDetail() {
           <ChartContainer type="bar" data={deviceChartConfig} options={deviceChartOptions} height={250} />
         </div>
       </div>
+
+      {/* User Export Modal */}
+      <UserExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        segmentName={segment.name}
+      />
     </div>
   )
 }

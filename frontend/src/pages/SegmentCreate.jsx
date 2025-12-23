@@ -255,19 +255,17 @@ function SegmentCreate() {
 
             {selectedMetrics.length > 0 && (
               <div className="selected-metrics-list">
-                {selectedMetrics.map((metric) => (
-                  <div key={metric.id} className="selected-metric-item">
-                    <div className="selected-metric-info">
-                      <div className="selected-metric-name">{metric.name}</div>
-                      <div className="selected-metric-description">{metric.description}</div>
-                    </div>
+                {selectedMetrics.map((metric, index) => (
+                  <div key={metric.id} className="selected-metric-chip">
+                    <span className="metric-chip-number">{index + 1}</span>
+                    <span className="metric-chip-name">{metric.name}</span>
                     <button
                       type="button"
-                      className="remove-metric-btn"
+                      className="metric-chip-remove"
                       onClick={() => handleRemoveMetric(metric.id)}
                       title="제거"
                     >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                       </svg>

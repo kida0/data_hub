@@ -1,6 +1,7 @@
 .segment-create-page {
   padding: 32px 40px;
   max-width: 900px;
+  margin: 0 auto;
 }
 
 .form-container {
@@ -154,57 +155,70 @@
 
 .selected-metrics-list {
   margin-top: 16px;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
+  width: 100%;
 }
 
-.selected-metric-item {
+.selected-metric-chip {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 16px;
+  gap: 8px;
+  padding: 10px 14px;
   border: 1px solid #e5e8eb;
   border-radius: 8px;
   background: #f8f9fa;
   transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.selected-metric-item:hover {
+.selected-metric-chip:hover {
   border-color: #020760;
   background: #f0f0ff;
 }
 
-.selected-metric-info {
-  flex: 1;
+.metric-chip-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: #e8eaff;
+  color: #020760;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
-.selected-metric-name {
-  font-size: 15px;
+.metric-chip-name {
+  font-size: 14px;
   font-weight: 600;
   color: #191f28;
-  margin-bottom: 4px;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.selected-metric-description {
-  font-size: 13px;
-  color: #8b95a1;
-  line-height: 1.5;
-}
-
-.remove-metric-btn {
-  padding: 8px;
+.metric-chip-remove {
+  padding: 4px;
   border: none;
   background: none;
   color: #8b95a1;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: 4px;
   transition: all 0.2s ease;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.remove-metric-btn:hover {
-  background: #ffffff;
+.metric-chip-remove:hover {
+  background: #fee;
   color: #ef4444;
 }
 

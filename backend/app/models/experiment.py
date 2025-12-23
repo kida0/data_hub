@@ -16,37 +16,31 @@ class Experiment(Base):
     experiment_type = Column(String(50), nullable=True, default="A/B Test")
     status = Column(String(50), nullable=True, default="draft")
 
-    # 목표 및 가설
-    objective = Column(String(100), nullable=True)
+    # 실험 계획
+    objective = Column(String(255), nullable=False)
+    background = Column(Text, nullable=False)
     hypothesis = Column(Text, nullable=False)
-    ice_impact = Column(Integer, nullable=True)
-    ice_confidence = Column(Integer, nullable=True)
-    ice_ease = Column(Integer, nullable=True)
+    expected_impact = Column(Text, nullable=True)
 
-    # 메트릭
-    primary_metric_id = Column(Integer, ForeignKey("metrics.id"), nullable=True)
+    # 메트릭 (JSON 배열)
+    primary_metric_ids = Column(Text, nullable=False)  # JSON array as string
     secondary_metric_ids = Column(Text, nullable=True)  # JSON array as string
+    guardrail_metric_ids = Column(Text, nullable=True)  # JSON array as string
 
     # 기간 및 대상
-    start_date = Column(Date, nullable=False)
-    end_date = Column(Date, nullable=False)
-    target_segment_id = Column(Integer, ForeignKey("segments.id"), nullable=True)
+    start_date = Column(Date, nullable=True)
+    end_date = Column(Date, nullable=True)
+    target_segment_id = Column(Integer, ForeignKey("segments.id"), nullable=False)
 
-    # Variants (JSON 배열)
-    variants = Column(Text, nullable=False)  # JSON array as string
+    # Variants (JSON 배열) - 생성 시에는 필수 아님
+    variants = Column(Text, nullable=True)  # JSON array as string
 
-    # 통계 설정
-    minimum_detectable_effect = Column(Float, nullable=True, default=5.0)
-    statistical_significance = Column(Float, nullable=True, default=95.0)
-    statistical_power = Column(Float, nullable=True, default=80.0)
-
-    # 추가 정보
-    conditions = Column(Text, nullable=True)
-    confounding_factors = Column(Text, nullable=True)
-
-    # 실행 결과
-    progress = Column(Float, nullable=True, default=0.0)
-    days_left = Column(Integer, nullable=True)
+    # 데이터팀 입력 필드 - 통계적 설계
+    experiment_unit = Column(String(50), nullable=True, default="User")
+    significance_level = Column(Float, nullable=True, default=0.05)
+    statistical_power = Column(Float, nullable=True, default=0.8)
+    minimum_detectable_effect = Column(Float, nullable=True)
+    sample_size = Column(String(50), nullable=True)
 
     # 메타데이터
     created_at = Column(DateTime, server_default=func.now())

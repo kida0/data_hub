@@ -53,9 +53,9 @@ function VariantsBuilder({ variants, onChange }) {
           <div className="variant-header">
             <div className="variant-title">
               {variant.name === 'Control' ? (
-                <span className="control-badge">Control</span>
+                <span className="control-badge">대조군 (Control)</span>
               ) : (
-                <span className="variant-badge">Variant</span>
+                <span className="variant-badge">실험군 (Variant {String.fromCharCode(65 + index - 1)})</span>
               )}
             </div>
             {variant.name !== 'Control' && (
@@ -63,7 +63,7 @@ function VariantsBuilder({ variants, onChange }) {
                 type="button"
                 className="remove-variant-btn"
                 onClick={() => handleRemoveVariant(index)}
-                title="Variant 제거"
+                title="실험군 제거"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -73,34 +73,23 @@ function VariantsBuilder({ variants, onChange }) {
             )}
           </div>
 
-          <div className="variant-fields">
-            <div className="form-group">
-              <label className="form-label">이름 <span className="required">*</span></label>
+          <div className="variant-fields-compact">
+            <div className="form-group-inline">
+              <label className="form-label-inline">그룹명 <span className="required">*</span></label>
               <input
                 type="text"
-                className="form-input"
+                className="form-input-compact"
                 value={variant.name}
                 onChange={(e) => handleVariantChange(index, 'name', e.target.value)}
                 placeholder="예: Control, Variant A"
               />
             </div>
 
-            <div className="form-group">
-              <label className="form-label">설명</label>
-              <textarea
-                className="form-textarea"
-                rows="2"
-                value={variant.description}
-                onChange={(e) => handleVariantChange(index, 'description', e.target.value)}
-                placeholder="이 변수에 대한 설명을 입력하세요"
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">트래픽 할당 (%) <span className="required">*</span></label>
+            <div className="form-group-inline">
+              <label className="form-label-inline">할당량 (%) <span className="required">*</span></label>
               <input
                 type="number"
-                className="form-input"
+                className="form-input-compact allocation-input"
                 min="0"
                 max="100"
                 value={variant.traffic_allocation}
@@ -121,13 +110,13 @@ function VariantsBuilder({ variants, onChange }) {
           <line x1="12" y1="5" x2="12" y2="19"></line>
           <line x1="5" y1="12" x2="19" y2="12"></line>
         </svg>
-        Variant 추가
+        실험군 추가
       </button>
 
-      {/* 트래픽 합계 표시 및 검증 */}
+      {/* 할당량 합계 표시 및 검증 */}
       <div className="traffic-summary">
         <div className="traffic-label">
-          <span>총 트래픽 할당</span>
+          <span>총 할당량</span>
           <span className={`traffic-total ${isValidTraffic ? 'valid' : 'invalid'}`}>
             {totalTraffic}%
             {isValidTraffic ? (
@@ -161,7 +150,7 @@ function VariantsBuilder({ variants, onChange }) {
 
         {!isValidTraffic && (
           <div className="traffic-warning">
-            트래픽 할당의 합계가 100%가 되어야 합니다 (현재: {totalTraffic}%)
+            할당량의 합계가 100%가 되어야 합니다 (현재: {totalTraffic}%)
           </div>
         )}
       </div>

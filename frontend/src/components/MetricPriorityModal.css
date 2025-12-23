@@ -15,7 +15,7 @@
 /* 세로 분할 레이아웃 */
 .modal-body-split-vertical {
   display: grid;
-  grid-template-columns: 380px auto 1fr;
+  grid-template-columns: 4fr auto 6fr;
   gap: 0;
   flex: 1;
   overflow: hidden;

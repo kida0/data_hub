@@ -21,7 +21,10 @@ function Metrics() {
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [categoryFilter, setCategoryFilter] = useState('')
+  const [priorityFilter, setPriorityFilter] = useState('')
   const [isPriorityModalOpen, setIsPriorityModalOpen] = useState(false)
+  const [sortField, setSortField] = useState(null)
+  const [sortDirection, setSortDirection] = useState('asc')
   const itemsPerPage = 10
 
   useEffect(() => {
@@ -52,26 +55,65 @@ function Metrics() {
     }
   }
 
+  const handleSort = (field) => {
+    if (sortField === field) {
+      // 같은 필드를 클릭하면 방향 전환
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      // 새로운 필드를 클릭하면 해당 필드로 오름차순 정렬
+      setSortField(field)
+      setSortDirection('asc')
+    }
+  }
+
   const filteredMetrics = metrics.filter((metric) => {
     const matchesSearch =
       metric.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       metric.description?.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesCategory = !categoryFilter || metric.category === categoryFilter
-    return matchesSearch && matchesCategory
+    const matchesPriority = !priorityFilter || metric.priority === priorityFilter
+    return matchesSearch && matchesCategory && matchesPriority
   })
 
-  const totalPages = Math.ceil(filteredMetrics.length / itemsPerPage)
+  // 정렬된 메트릭
+  const sortedMetrics = [...filteredMetrics].sort((a, b) => {
+    if (!sortField) return 0
+
+    let aValue, bValue
+
+    if (sortField === 'priority') {
+      // 중요도: P0 > P1 > P2 > null
+      const priorityOrder = { P0: 0, P1: 1, P2: 2 }
+      aValue = a.priority ? priorityOrder[a.priority] : 999
+      bValue = b.priority ? priorityOrder[b.priority] : 999
+    } else if (sortField === 'category') {
+      aValue = a.category || ''
+      bValue = b.category || ''
+    } else if (sortField === 'status') {
+      // 수집상태: 활성화 > 주의 > 비활성화
+      const statusOrder = { 활성화: 0, 주의: 1, 비활성화: 2 }
+      aValue = a.status ? statusOrder[a.status] : 999
+      bValue = b.status ? statusOrder[b.status] : 999
+    }
+
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1
+    return 0
+  })
+
+  const totalPages = Math.ceil(sortedMetrics.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
-  const currentMetrics = filteredMetrics.slice(startIndex, endIndex)
+  const currentMetrics = sortedMetrics.slice(startIndex, endIndex)
 
   const handleRowClick = (id) => {
     navigate(`/metrics/${id}`)
   }
 
-  const handlePrioritySave = (priorityMetrics) => {
+  const handlePrioritySave = async (priorityMetrics) => {
     // 우선순위 저장 후 지표 목록 새로고침
-    fetchMetrics()
+    await fetchMetrics()
+    await fetchStats()
     console.log('Saved priorities:', priorityMetrics)
   }
 
@@ -133,12 +175,25 @@ function Metrics() {
                 setCurrentPage(1)
               }}
             >
-              <option value="">전체 분류</option>
+              <option value="">카테고리</option>
               <option value="Engagement">Engagement</option>
               <option value="Revenue">Revenue</option>
               <option value="Retention">Retention</option>
               <option value="Acquisition">Acquisition</option>
               <option value="Product">Product</option>
+            </select>
+            <select
+              className="filter-dropdown"
+              value={priorityFilter}
+              onChange={(e) => {
+                setPriorityFilter(e.target.value)
+                setCurrentPage(1)
+              }}
+            >
+              <option value="">지표 중요도</option>
+              <option value="P0">P0</option>
+              <option value="P1">P1</option>
+              <option value="P2">P2</option>
             </select>
           </div>
           <div className="search-filter">
@@ -158,9 +213,81 @@ function Metrics() {
                 <th style={{ width: '60px' }}>#</th>
                 <th style={{ width: '200px' }}>지표명</th>
                 <th>지표 설명</th>
-                <th style={{ width: '100px' }}>중요도</th>
-                <th style={{ width: '140px' }}>분류</th>
-                <th style={{ width: '120px' }}>수집상태</th>
+                <th
+                  style={{ width: '100px', cursor: 'pointer' }}
+                  onClick={() => handleSort('priority')}
+                  className="sortable-header"
+                >
+                  <div className="header-content">
+                    중요도
+                    {sortField === 'priority' && (
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        style={{
+                          transform: sortDirection === 'desc' ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.2s',
+                        }}
+                      >
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                      </svg>
+                    )}
+                  </div>
+                </th>
+                <th
+                  style={{ width: '140px', cursor: 'pointer' }}
+                  onClick={() => handleSort('category')}
+                  className="sortable-header"
+                >
+                  <div className="header-content">
+                    분류
+                    {sortField === 'category' && (
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        style={{
+                          transform: sortDirection === 'desc' ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.2s',
+                        }}
+                      >
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                      </svg>
+                    )}
+                  </div>
+                </th>
+                <th
+                  style={{ width: '120px', cursor: 'pointer' }}
+                  onClick={() => handleSort('status')}
+                  className="sortable-header"
+                >
+                  <div className="header-content">
+                    수집상태
+                    {sortField === 'status' && (
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        style={{
+                          transform: sortDirection === 'desc' ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.2s',
+                        }}
+                      >
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                      </svg>
+                    )}
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody>
