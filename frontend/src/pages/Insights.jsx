@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
 import Badge from '../components/Badge'
@@ -9,12 +9,40 @@ function Insights() {
   const [expandedGroups, setExpandedGroups] = useState({})
   const [activeFilter, setActiveFilter] = useState('all')
   const [showMoreCategories, setShowMoreCategories] = useState(false)
+  const [viewMode, setViewMode] = useState('table') // 'table' or 'card'
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showFilters, setShowFilters] = useState(false)
+  const [sortBy, setSortBy] = useState('date-desc') // 'date-desc', 'date-asc', 'roi-desc', 'roi-asc', 'performance-desc'
+  const [favorites, setFavorites] = useState(new Set(['conversion-1'])) // favoriteId format: groupId-initiativeIdx
+  const [filters, setFilters] = useState({
+    types: [],
+    teams: [],
+    status: 'all',
+    dateRange: 'all'
+  })
 
   const toggleExpand = (groupId) => {
     setExpandedGroups(prev => ({
       ...prev,
       [groupId]: !prev[groupId]
     }))
+  }
+
+  const toggleFavorite = (groupId, initiativeIdx) => {
+    const favoriteId = `${groupId}-${initiativeIdx}`
+    setFavorites(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(favoriteId)) {
+        newSet.delete(favoriteId)
+      } else {
+        newSet.add(favoriteId)
+      }
+      return newSet
+    })
+  }
+
+  const isFavorite = (groupId, initiativeIdx) => {
+    return favorites.has(`${groupId}-${initiativeIdx}`)
   }
 
   const objectiveGroups = [
@@ -313,6 +341,85 @@ function Insights() {
     return typeMap[type] || 'info'
   }
 
+  // Combine all initiatives from all groups
+  const allInitiatives = useMemo(() => {
+    const allGroups = [...objectiveGroups, ...additionalCategories]
+    const initiatives = []
+
+    allGroups.forEach(group => {
+      const groupInitiatives = [...group.initiatives, ...(group.hiddenInitiatives || [])]
+      groupInitiatives.forEach((initiative, idx) => {
+        initiatives.push({
+          ...initiative,
+          groupId: group.id,
+          groupTitle: group.title,
+          metricLabel: group.metricLabel,
+          initiativeIdx: idx,
+          favoriteId: `${group.id}-${idx}`
+        })
+      })
+    })
+
+    return initiatives
+  }, [objectiveGroups, additionalCategories])
+
+  // Filter and sort initiatives
+  const filteredAndSortedInitiatives = useMemo(() => {
+    let result = [...allInitiatives]
+
+    // Apply search
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      result = result.filter(initiative =>
+        initiative.name.toLowerCase().includes(query) ||
+        initiative.desc.toLowerCase().includes(query) ||
+        initiative.groupTitle.toLowerCase().includes(query)
+      )
+    }
+
+    // Apply filters
+    if (filters.types.length > 0) {
+      result = result.filter(initiative => filters.types.includes(initiative.type))
+    }
+    if (filters.teams.length > 0) {
+      result = result.filter(initiative => filters.teams.includes(initiative.team))
+    }
+    if (filters.status !== 'all') {
+      result = result.filter(initiative => initiative.status === filters.status)
+    }
+
+    // Apply favorites filter
+    if (activeFilter === 'favorites') {
+      result = result.filter(initiative => favorites.has(initiative.favoriteId))
+    }
+
+    // Apply sorting
+    result.sort((a, b) => {
+      const roiA = parseFloat(a.roi)
+      const roiB = parseFloat(b.roi)
+      const changeA = parseFloat(a.change.replace('%', '').replace('+', ''))
+      const changeB = parseFloat(b.change.replace('%', '').replace('+', ''))
+
+      switch (sortBy) {
+        case 'roi-desc':
+          return roiB - roiA
+        case 'roi-asc':
+          return roiA - roiB
+        case 'performance-desc':
+          return changeB - changeA
+        case 'performance-asc':
+          return changeA - changeB
+        case 'date-asc':
+          return a.period.localeCompare(b.period)
+        case 'date-desc':
+        default:
+          return b.period.localeCompare(a.period)
+      }
+    })
+
+    return result
+  }, [allInitiatives, searchQuery, filters, activeFilter, favorites, sortBy])
+
   const handleInitiativeClick = (groupId, initiativeIdx) => {
     // "신규 가입 쿠폰 (20% 할인)" 항목만 클릭 가능
     if (groupId === 'conversion' && initiativeIdx === 1) {
@@ -327,242 +434,339 @@ function Insights() {
         title="Insights"
         description="목표별 시도와 성과를 비교하고 최적의 전략을 발견하세요"
         actions={
-          <>
-            <button className="btn-compact btn-secondary" onClick={() => alert('목표 관리 기능은 준비 중입니다.')}>
-              <span>목표 관리</span>
-            </button>
-            <button className="btn-compact btn-primary" disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>
-              <span>+ 새 인사이트</span>
-            </button>
-          </>
+          <button className="btn-compact btn-primary" onClick={() => navigate('/insights/new')}>
+            <span>+ 새 인사이트</span>
+          </button>
         }
       />
 
-      {/* Filter Tabs */}
-      <div className="filter-section">
-        <div className="filter-tabs">
-          <div 
-            className={`filter-tab ${activeFilter === 'all' ? 'active' : ''}`}
-            onClick={() => setActiveFilter('all')}
+      {/* Search and View Controls */}
+      <div className="insights-controls">
+        <div className="search-bar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+          </svg>
+          <input
+            type="text"
+            placeholder="실험 이름, 설명, 목표로 검색..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button className="clear-search" onClick={() => setSearchQuery('')}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          )}
+        </div>
+
+        <div className="view-controls">
+          <button
+            className={`filter-toggle-btn ${showFilters ? 'active' : ''}`}
+            onClick={() => setShowFilters(!showFilters)}
           >
-            전체 목표 <span className="filter-count">{objectiveGroups.length + additionalCategories.length}</span>
-          </div>
-          <div 
-            className={`filter-tab ${activeFilter === 'favorites' ? 'active' : ''}`}
-            onClick={() => setActiveFilter('favorites')}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+            </svg>
+            필터
+          </button>
+
+          <select
+            className="sort-select"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
           >
-            즐겨찾기 <span className="filter-count">2</span>
+            <option value="date-desc">최신순</option>
+            <option value="date-asc">오래된순</option>
+            <option value="roi-desc">ROI 높은순</option>
+            <option value="roi-asc">ROI 낮은순</option>
+            <option value="performance-desc">성과 높은순</option>
+            <option value="performance-asc">성과 낮은순</option>
+          </select>
+
+          <div className="view-mode-toggle">
+            <button
+              className={`view-btn ${viewMode === 'table' ? 'active' : ''}`}
+              onClick={() => setViewMode('table')}
+              title="테이블 뷰"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+              </svg>
+            </button>
+            <button
+              className={`view-btn ${viewMode === 'card' ? 'active' : ''}`}
+              onClick={() => setViewMode('card')}
+              title="카드 뷰"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Insights Table */}
-      <div className="insights-section">
-        {objectiveGroups.map((group, index) => (
-          <div key={group.id} className="objective-group" style={{ animationDelay: `${0.1 * (index + 1)}s` }}>
-            <div className="objective-header">
-              <div className="objective-title-row">
-                <h2 className="objective-title">{group.title}</h2>
-                <span className="objective-count">{group.count}개 시도</span>
-              </div>
-            </div>
-
-            <div className="table-container">
-              <table className="insights-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: '320px' }}>시도 내용</th>
-                    <th style={{ width: '100px' }}>타입</th>
-                    <th className="align-right sortable" style={{ width: '120px' }}>{group.metricLabel}</th>
-                    <th className="align-right sortable" style={{ width: '120px' }}>ROI</th>
-                    <th style={{ width: '100px' }}>담당</th>
-                    <th style={{ width: '140px' }}>기간</th>
-                    <th style={{ width: '80px' }}>상태</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {group.initiatives.map((initiative, idx) => (
-                    <tr 
-                      key={idx} 
-                      className={`table-row ${initiative.highlight === 'best' ? 'best-performer' : ''} ${group.id === 'conversion' && idx === 1 ? 'clickable-initiative' : 'non-clickable-initiative'}`}
-                      onClick={() => handleInitiativeClick(group.id, idx)}
-                    >
-                      <td>
-                        <div className="initiative-cell">
-                          <div className="initiative-name">
-                            {initiative.name}
-                            {group.id === 'conversion' && idx === 1 && (
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: '8px', verticalAlign: 'middle' }}>
-                                <polyline points="9 18 15 12 9 6"></polyline>
-                              </svg>
-                            )}
-                          </div>
-                          <div className="initiative-desc">{initiative.desc}</div>
-                        </div>
-                      </td>
-                      <td>
-                        <Badge variant={getTypeVariant(initiative.type)}>{initiative.type}</Badge>
-                      </td>
-                      <td className="align-right">
-                        <div className="metric-cell">
-                          <span className="metric-value">{initiative.metric}</span>
-                          <span className={`metric-change ${initiative.change.startsWith('+') ? 'positive' : 'negative'}`}>
-                            {initiative.change}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="align-right">
-                        <div className="metric-cell">
-                          <span className="metric-value">{initiative.roi}</span>
-                          <span className={`metric-change ${initiative.roiLabel === '최고 성과' || initiative.roiLabel === '목표 달성' ? 'positive' : 'neutral'}`}>
-                            {initiative.roiLabel}
-                          </span>
-                        </div>
-                      </td>
-                      <td>
-                        <span className="team-badge-small">{initiative.team}</span>
-                      </td>
-                      <td>
-                        <span className="date-text">{initiative.period}</span>
-                      </td>
-                      <td>
-                        <Badge variant={initiative.status}>완료</Badge>
-                      </td>
-                    </tr>
-                  ))}
-                  {expandedGroups[group.id] && group.hiddenInitiatives && group.hiddenInitiatives.map((initiative, idx) => (
-                    <tr 
-                      key={`hidden-${idx}`} 
-                      className={`table-row ${initiative.highlight === 'best' ? 'best-performer' : ''} non-clickable-initiative`}
-                    >
-                      <td>
-                        <div className="initiative-cell">
-                          <div className="initiative-name">{initiative.name}</div>
-                          <div className="initiative-desc">{initiative.desc}</div>
-                        </div>
-                      </td>
-                      <td>
-                        <Badge variant={getTypeVariant(initiative.type)}>{initiative.type}</Badge>
-                      </td>
-                      <td className="align-right">
-                        <div className="metric-cell">
-                          <span className="metric-value">{initiative.metric}</span>
-                          <span className={`metric-change ${initiative.change.startsWith('+') ? 'positive' : 'negative'}`}>
-                            {initiative.change}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="align-right">
-                        <div className="metric-cell">
-                          <span className="metric-value">{initiative.roi}</span>
-                          <span className={`metric-change ${initiative.roiLabel === '최고 성과' || initiative.roiLabel === '목표 달성' ? 'positive' : 'neutral'}`}>
-                            {initiative.roiLabel}
-                          </span>
-                        </div>
-                      </td>
-                      <td>
-                        <span className="team-badge-small">{initiative.team}</span>
-                      </td>
-                      <td>
-                        <span className="date-text">{initiative.period}</span>
-                      </td>
-                      <td>
-                        <Badge variant={initiative.status}>완료</Badge>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {group.hiddenCount > 0 && (
-                <div className="expand-section">
-                  <button className="expand-btn" onClick={() => toggleExpand(group.id)}>
-                    <span className="expand-text">
-                      {expandedGroups[group.id] ? '접기' : `+ ${group.hiddenCount}개 더 보기`}
-                    </span>
-                  </button>
-                </div>
-              )}
+      {/* Advanced Filters */}
+      {showFilters && (
+        <div className="advanced-filters">
+          <div className="filter-group">
+            <label>타입</label>
+            <div className="filter-options">
+              {['A/B Test', 'Campaign', 'Feature', 'Analysis'].map(type => (
+                <label key={type} className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={filters.types.includes(type)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setFilters(prev => ({ ...prev, types: [...prev.types, type] }))
+                      } else {
+                        setFilters(prev => ({ ...prev, types: prev.types.filter(t => t !== type) }))
+                      }
+                    }}
+                  />
+                  <Badge variant={getTypeVariant(type)}>{type}</Badge>
+                </label>
+              ))}
             </div>
           </div>
-        ))}
 
-        {/* Additional Categories */}
-        {showMoreCategories && additionalCategories.map((group, index) => (
-          <div key={group.id} className="objective-group" style={{ animationDelay: `${0.1 * (index + 1)}s` }}>
-            <div className="objective-header">
-              <div className="objective-title-row">
-                <h2 className="objective-title">{group.title}</h2>
-                <span className="objective-count">{group.count}개 시도</span>
-              </div>
-            </div>
-
-            <div className="table-container">
-              <table className="insights-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: '320px' }}>시도 내용</th>
-                    <th style={{ width: '100px' }}>타입</th>
-                    <th className="align-right sortable" style={{ width: '120px' }}>{group.metricLabel}</th>
-                    <th className="align-right sortable" style={{ width: '120px' }}>ROI</th>
-                    <th style={{ width: '100px' }}>담당</th>
-                    <th style={{ width: '140px' }}>기간</th>
-                    <th style={{ width: '80px' }}>상태</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {group.initiatives.map((initiative, idx) => (
-                    <tr 
-                      key={idx} 
-                      className={`table-row ${initiative.highlight === 'best' ? 'best-performer' : ''}`}
-                    >
-                      <td>
-                        <div className="initiative-cell">
-                          <div className="initiative-name">{initiative.name}</div>
-                          <div className="initiative-desc">{initiative.desc}</div>
-                        </div>
-                      </td>
-                      <td>
-                        <Badge variant={getTypeVariant(initiative.type)}>{initiative.type}</Badge>
-                      </td>
-                      <td className="align-right">
-                        <div className="metric-cell">
-                          <span className="metric-value">{initiative.metric}</span>
-                          <span className={`metric-change ${initiative.change.startsWith('+') ? 'positive' : 'negative'}`}>
-                            {initiative.change}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="align-right">
-                        <div className="metric-cell">
-                          <span className="metric-value">{initiative.roi}</span>
-                          <span className={`metric-change ${initiative.roiLabel === '최고 성과' || initiative.roiLabel === '목표 달성' ? 'positive' : 'neutral'}`}>
-                            {initiative.roiLabel}
-                          </span>
-                        </div>
-                      </td>
-                      <td>
-                        <span className="team-badge-small">{initiative.team}</span>
-                      </td>
-                      <td>
-                        <span className="date-text">{initiative.period}</span>
-                      </td>
-                      <td>
-                        <Badge variant={initiative.status}>완료</Badge>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <div className="filter-group">
+            <label>팀</label>
+            <div className="filter-options">
+              {['Product', 'Marketing', 'Data', 'CX'].map(team => (
+                <label key={team} className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={filters.teams.includes(team)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setFilters(prev => ({ ...prev, teams: [...prev.teams, team] }))
+                      } else {
+                        setFilters(prev => ({ ...prev, teams: prev.teams.filter(t => t !== team) }))
+                      }
+                    }}
+                  />
+                  <span className="team-badge-small">{team}</span>
+                </label>
+              ))}
             </div>
           </div>
-        ))}
 
-        {/* More categories indicator */}
-        <div className="more-categories">
-          <button className="load-more-btn" onClick={() => setShowMoreCategories(!showMoreCategories)}>
-            <span>{showMoreCategories ? '카테고리 접기' : `+ ${additionalCategories.length}개 목표 카테고리 더 보기`}</span>
+          <div className="filter-group">
+            <label>기타</label>
+            <div className="filter-options">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={activeFilter === 'favorites'}
+                  onChange={(e) => {
+                    setActiveFilter(e.target.checked ? 'favorites' : 'all')
+                  }}
+                />
+                <span className="favorites-label">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill={activeFilter === 'favorites' ? '#fbbf24' : 'none'} stroke="currentColor" strokeWidth="2" style={{ marginRight: '4px' }}>
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                  </svg>
+                  즐겨찾기만 보기 ({favorites.size})
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <button
+            className="clear-filters-btn"
+            onClick={() => {
+              setFilters({ types: [], teams: [], status: 'all', dateRange: 'all' })
+              setActiveFilter('all')
+            }}
+          >
+            필터 초기화
           </button>
         </div>
+      )}
+
+
+      {/* Insights Content */}
+      <div className="insights-section">
+        {viewMode === 'card' ? (
+          // Card View
+          <div className="insights-cards">
+            {filteredAndSortedInitiatives.map((initiative, index) => (
+              <div
+                key={`${initiative.groupId}-${initiative.initiativeIdx}`}
+                className={`insight-card ${initiative.highlight === 'best' ? 'best-performer' : ''}`}
+                style={{ animationDelay: `${0.05 * index}s` }}
+                onClick={() => handleInitiativeClick(initiative.groupId, initiative.initiativeIdx)}
+              >
+                <div className="card-header">
+                  <div className="card-title-row">
+                    <h3 className="card-title">{initiative.name}</h3>
+                    <button
+                      className="favorite-btn"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleFavorite(initiative.groupId, initiative.initiativeIdx)
+                      }}
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill={isFavorite(initiative.groupId, initiative.initiativeIdx) ? '#fbbf24' : 'none'} stroke={isFavorite(initiative.groupId, initiative.initiativeIdx) ? '#fbbf24' : 'currentColor'} strokeWidth="2">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                      </svg>
+                    </button>
+                  </div>
+                  <p className="card-desc">{initiative.desc}</p>
+                  <div className="card-tags">
+                    <span className="card-category">{initiative.groupTitle}</span>
+                    <Badge variant={getTypeVariant(initiative.type)}>{initiative.type}</Badge>
+                  </div>
+                </div>
+
+                <div className="card-metrics">
+                  <div className="card-metric">
+                    <div className="metric-label">{initiative.metricLabel}</div>
+                    <div className="metric-value-large">{initiative.metric}</div>
+                    <div className={`metric-change ${initiative.change.startsWith('+') ? 'positive' : 'negative'}`}>
+                      {initiative.change}
+                    </div>
+                  </div>
+                  <div className="card-metric">
+                    <div className="metric-label">ROI</div>
+                    <div className="metric-value-large">{initiative.roi}</div>
+                    <div className={`metric-change ${initiative.roiLabel === '최고 성과' || initiative.roiLabel === '목표 달성' ? 'positive' : 'neutral'}`}>
+                      {initiative.roiLabel}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card-footer">
+                  <span className="team-badge-small">{initiative.team}</span>
+                  <span className="date-text">{initiative.period}</span>
+                  <Badge variant={initiative.status}>완료</Badge>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          // Table View
+          <div className="table-container">
+            <table className="insights-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '40px' }}></th>
+                  <th style={{ width: '320px' }}>시도 내용</th>
+                  <th style={{ width: '120px' }}>목표</th>
+                  <th style={{ width: '100px' }}>타입</th>
+                  <th className="align-right" style={{ width: '120px' }}>성과</th>
+                  <th className="align-right" style={{ width: '120px' }}>ROI</th>
+                  <th style={{ width: '100px' }}>담당</th>
+                  <th style={{ width: '140px' }}>기간</th>
+                  <th style={{ width: '80px' }}>상태</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredAndSortedInitiatives.map((initiative, index) => (
+                  <tr
+                    key={`${initiative.groupId}-${initiative.initiativeIdx}`}
+                    className={`table-row ${initiative.highlight === 'best' ? 'best-performer' : ''} ${initiative.groupId === 'conversion' && initiative.initiativeIdx === 1 ? 'clickable-initiative' : 'non-clickable-initiative'}`}
+                    onClick={() => handleInitiativeClick(initiative.groupId, initiative.initiativeIdx)}
+                  >
+                    <td>
+                      <button
+                        className="favorite-btn-small"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleFavorite(initiative.groupId, initiative.initiativeIdx)
+                        }}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill={isFavorite(initiative.groupId, initiative.initiativeIdx) ? '#fbbf24' : 'none'} stroke={isFavorite(initiative.groupId, initiative.initiativeIdx) ? '#fbbf24' : 'currentColor'} strokeWidth="2">
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                      </button>
+                    </td>
+                    <td>
+                      <div className="initiative-cell">
+                        <div className="initiative-name">
+                          {initiative.name}
+                          {initiative.groupId === 'conversion' && initiative.initiativeIdx === 1 && (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: '8px', verticalAlign: 'middle' }}>
+                              <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                          )}
+                        </div>
+                        <div className="initiative-desc">{initiative.desc}</div>
+                      </div>
+                    </td>
+                    <td>
+                      <span className="category-badge">{initiative.groupTitle}</span>
+                    </td>
+                    <td>
+                      <Badge variant={getTypeVariant(initiative.type)}>{initiative.type}</Badge>
+                    </td>
+                    <td className="align-right">
+                      <div className="metric-cell">
+                        <span className="metric-value">{initiative.metric}</span>
+                        <span className={`metric-change ${initiative.change.startsWith('+') ? 'positive' : 'negative'}`}>
+                          {initiative.change}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="align-right">
+                      <div className="metric-cell">
+                        <span className="metric-value">{initiative.roi}</span>
+                        <span className={`metric-change ${initiative.roiLabel === '최고 성과' || initiative.roiLabel === '목표 달성' ? 'positive' : 'neutral'}`}>
+                          {initiative.roiLabel}
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className="team-badge-small">{initiative.team}</span>
+                    </td>
+                    <td>
+                      <span className="date-text">{initiative.period}</span>
+                    </td>
+                    <td>
+                      <Badge variant={initiative.status}>완료</Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {filteredAndSortedInitiatives.length === 0 && (
+          <div className="empty-state">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            <p>검색 결과가 없습니다</p>
+            <button className="btn-compact btn-secondary" onClick={() => {
+              setSearchQuery('')
+              setFilters({ types: [], teams: [], status: 'all', dateRange: 'all' })
+              setActiveFilter('all')
+            }}>
+              필터 초기화
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Results Count */}
+      <div className="results-count-footer">
+        {filteredAndSortedInitiatives.length}개의 결과
       </div>
     </div>
   )

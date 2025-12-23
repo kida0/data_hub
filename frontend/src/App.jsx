@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import Insights from './pages/Insights'
 import InsightDetail from './pages/InsightDetail'
+import InsightDetailExample from './pages/InsightDetailExample'
+import CreateInsight from './pages/CreateInsight'
 import Metrics from './pages/Metrics'
 import MetricDetail from './pages/MetricDetail'
 import MetricCreate from './pages/MetricCreate'
@@ -30,6 +32,8 @@ function App() {
           <Route path="/segments/:id/edit" element={<SegmentEdit />} />
           <Route path="/segments/:id" element={<SegmentDetail />} />
           <Route path="/insights" element={<Insights />} />
+          <Route path="/insights/new" element={<CreateInsight />} />
+          <Route path="/insights/example/onboarding-improvement" element={<InsightDetailExample />} />
           <Route path="/insights/:category/:id" element={<InsightDetail />} />
           <Route path="/experiments" element={<Experiments />} />
           <Route path="/experiments/new" element={<ExperimentCreate />} />

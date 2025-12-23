@@ -36,33 +36,20 @@
 }
 
 /* Table Styles - Additional segment-specific styles */
-th.sortable {
-  position: relative;
-  padding-right: 32px;
+.sortable-header {
+  user-select: none;
+  transition: background-color 0.2s;
 }
 
-.sort-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 14px;
-  height: 14px;
-  opacity: 0.3;
-  transition: opacity 0.2s ease;
+.sortable-header:hover {
+  background-color: #f8f9fa;
 }
 
-th:hover .sort-icon {
-  opacity: 0.6;
-}
-
-th.sorted .sort-icon {
-  opacity: 1;
-  stroke: #020760;
-}
-
-th.sorted.asc .sort-icon {
-  transform: translateY(-50%) rotate(180deg);
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 th.align-right {
